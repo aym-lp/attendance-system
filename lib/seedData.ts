@@ -1,7 +1,7 @@
 import type { Staff, AttendanceRecord, CorrectionHistory, AttendanceSummary, StaffRole, CorrectionField } from "@/lib/types";
 
 const staffNames = [
-  { name: "田中 太郎", kana: "タナカ タロウ", role: "manager" as StaffRole, hourlyWage: 1500, transportationAllowance: 5000 },
+  { name: "細田 道弘", kana: "ホソダ ミチヒロ", role: "admin" as StaffRole, hourlyWage: 1500, transportationAllowance: 5000 },
   { name: "佐藤 花子", kana: "サトウ ハナコ", role: "staff" as StaffRole, hourlyWage: 1200, transportationAllowance: 3000 },
   { name: "鈴木 一郎", kana: "スズキ イチロウ", role: "staff" as StaffRole, hourlyWage: 1100, transportationAllowance: 2000 },
   { name: "高橋 美咲", kana: "タカハシ ミサキ", role: "staff" as StaffRole, hourlyWage: 1250, transportationAllowance: 3500 },
@@ -16,7 +16,7 @@ export function generateSeedStaff(): Staff[] {
     role: staff.role,
     hourlyWage: staff.hourlyWage,
     transportationAllowance: staff.transportationAllowance,
-    memo: index === 0 ? "店舗責任者" : "",
+    memo: index === 0 ? "管理者" : "",
     isActive: true,
   }));
 }
