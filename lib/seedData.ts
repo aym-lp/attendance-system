@@ -79,12 +79,19 @@ function generateAttendanceForDay(staffId: string, staffName: string, date: Date
 export function generateSeedAttendanceRecords(staffList: Staff[]): AttendanceRecord[] {
   const records: AttendanceRecord[] = [];
   const today = new Date();
+  const todayString = today.toISOString().split("T")[0];
   const twoMonthsAgo = new Date(today);
   twoMonthsAgo.setMonth(today.getMonth() - 2);
 
   for (const staff of staffList) {
     const currentDate = new Date(twoMonthsAgo);
     while (currentDate <= today) {
+      const dateString = currentDate.toISOString().split("T")[0];
+      // 田中太郎（店長）の本日のレコードは生成しない
+      if (staff.id === "STF-001" && dateString === todayString) {
+        currentDate.setDate(currentDate.getDate() + 1);
+        continue;
+      }
       const record = generateAttendanceForDay(staff.id, staff.name, currentDate);
       if (record) {
         records.push(record);
