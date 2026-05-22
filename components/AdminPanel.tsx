@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { AttendanceRecord, AttendanceSummary, CorrectionField, CorrectionHistory, Staff, StaffRole } from "@/lib/types";
 import { formatCurrency, formatDateTime, formatMinutes, fromDateTimeInputValue, toDateTimeInputValue } from "@/lib/time";
 import { HistoryTable } from "@/components/HistoryTable";
@@ -37,6 +37,17 @@ function StaffDetailPanel({ staff, onUpdateStaff }: { staff: Staff; onUpdateStaf
   const [transportationAllowance, setTransportationAllowance] = useState(staff.transportationAllowance.toString());
   const [memo, setMemo] = useState(staff.memo);
   const [error, setError] = useState("");
+
+  // staffが更新されたらstateを同期
+  useEffect(() => {
+    setName(staff.name);
+    setKana(staff.kana);
+    setPin(staff.pin);
+    setRole(staff.role);
+    setHourlyWage(staff.hourlyWage.toString());
+    setTransportationAllowance(staff.transportationAllowance.toString());
+    setMemo(staff.memo);
+  }, [staff]);
 
   const save = () => {
     if (!name.trim() || !kana.trim()) {
