@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 小川勤怠
+
+店舗アルバイト向け勤怠管理システム。iPad・スマホで使いやすいPIN打刻システム。
+
+## 機能
+
+- PINコードによる打刻（出勤・退勤・休憩開始・休憩終了）
+- 店長・管理者向け管理画面
+- スタッフ登録・編集
+- 勤務履歴一覧
+- 打刻修正（スタッフ選択→日付選択→履歴選択→修正箇所→修正時刻）
+- 修正履歴
+- 月次集計（勤務日数・総勤務時間・残業時間・基本賃金・時間外賃金・交通費・合計支給額）
+- CSV出力（スタッフ・月毎）
+- 給与明細出力（PDF印刷対応）
+- モバイル対応
 
 ## Getting Started
 
-First, run the development server:
+### ローカル開発
 
 ```bash
+# 依存関係をインストール
+npm install
+
+# 開発サーバーを起動
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+ブラウザで [http://localhost:3000](http://localhost:3000) を開いて確認してください。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### ビルド
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+```
 
-## Learn More
+### Lint
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run lint
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## デプロイ
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Vercelへのデプロイ
 
-## Deploy on Vercel
+1. GitHubリポジトリにコードをプッシュ
+2. [Vercel](https://vercel.com/new) でリポジトリをインポート
+3. ビルド設定は自動で検出されます（vercel.jsonを使用）
+4. デプロイ
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 環境変数
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+データベース連携を使用する場合、`.env.example` を参考に環境変数を設定してください。
+
+## 技術スタック
+
+- Next.js 16.2.6
+- React 19.2.4
+- TypeScript
+- Tailwind CSS 4
+- ESLint
+
+## 開発モード
+
+開発モードではSeedデータ（ダミーデータ）が自動生成され、UI確認が可能です。
+
+## ライセンス
+
+MIT
