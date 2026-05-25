@@ -2,15 +2,17 @@
 
 import { useMemo, useState } from "react";
 import type { AttendanceRecord, Staff } from "@/lib/types";
-import { formatDateTime, formatMinutes, formatCurrency, getOvertimeMinutes, getWorkedMinutes, roundUpBreakMinutes } from "@/lib/time";
+import { formatDateTime, formatMinutes, formatCurrency, getOvertimeMinutes, getWorkedMinutes, roundUpBreakMinutes, getApplicableAllowances, getEffectiveHourlyWage } from "@/lib/time";
+import type { Allowance } from "@/lib/types";
 
 type HistoryTableProps = {
   records: AttendanceRecord[];
   staffList?: Staff[];
   isAdmin?: boolean;
+  allowances?: Allowance[];
 };
 
-export function HistoryTable({ records, staffList = [], isAdmin = true }: HistoryTableProps) {
+export function HistoryTable({ records, staffList = [], isAdmin = true, allowances = [] }: HistoryTableProps) {
   const now = useMemo(() => new Date(), []);
   const [filterStaffId, setFilterStaffId] = useState("all");
   const [filterMonth, setFilterMonth] = useState("");
@@ -29,9 +31,11 @@ export function HistoryTable({ records, staffList = [], isAdmin = true }: Histor
     return filtered.sort((a, b) => new Date(b.workDate).getTime() - new Date(a.workDate).getTime());
   }, [records, filterStaffId, filterMonth]);
 
-  function getDailyPay(record: AttendanceRecord): { regularPay: number; overtimePay: number; totalPay: number; breakRounded: number; breakError: boolean; netWorkMinutes: number; overtimeMinutes: number } {
+  function getDailyPay(record: AttendanceRecord): { regularPay: number; overtimePay: number; totalPay: number; breakRounded: number; breakError: boolean; netWorkMinutes: number; overtimeMinutes: number; allowanceLabels: string[] } {
     const staff = staffList.find((s) => s.id === record.staffId);
-    const hourlyWage = staff?.hourlyWage ?? 0;
+    const baseHourlyWage = staff?.hourlyWage ?? 0;
+    const applicableAllowances = getApplicableAllowances(record, allowances);
+    const { wage: hourlyWage, labels: allowanceLabels } = getEffectiveHourlyWage(baseHourlyWage, applicableAllowances);
     const clockOutTime = record.clockOut ? new Date(record.clockOut) : now;
     const grossWorkMinutes = getWorkedMinutes(record, clockOutTime);
     const { rounded: breakRounded, error: breakError } = record.totalBreakMinutes === 0 ? { rounded: 0, error: false } : roundUpBreakMinutes(record.totalBreakMinutes);
@@ -40,7 +44,7 @@ export function HistoryTable({ records, staffList = [], isAdmin = true }: Histor
     const regularMinutes = Math.max(0, netWorkMinutes - overtimeMinutes);
     const regularPay = (regularMinutes / 60) * hourlyWage;
     const overtimePay = (overtimeMinutes / 60) * hourlyWage * 1.25;
-    return { regularPay, overtimePay, totalPay: regularPay + overtimePay, breakRounded, breakError, netWorkMinutes, overtimeMinutes };
+    return { regularPay, overtimePay, totalPay: regularPay + overtimePay, breakRounded, breakError, netWorkMinutes, overtimeMinutes, allowanceLabels };
   }
 
   const uniqueMonths = useMemo(() => {
@@ -90,6 +94,7 @@ export function HistoryTable({ records, staffList = [], isAdmin = true }: Histor
                   <th className="px-4 py-3">通常給与</th>
                   <th className="px-4 py-3">残業給与</th>
                   <th className="px-4 py-3">日給合計</th>
+                  <th className="px-4 py-3">手当</th>
                 </>
               )}
             </tr>
@@ -117,6 +122,17 @@ export function HistoryTable({ records, staffList = [], isAdmin = true }: Histor
                       <td className="px-4 py-3">{formatCurrency(pay.regularPay)}</td>
                       <td className="px-4 py-3">{formatCurrency(pay.overtimePay)}</td>
                       <td className="px-4 py-3 font-bold">{formatCurrency(pay.totalPay)}</td>
+                      <td className="px-4 py-3">
+                        {pay.allowanceLabels.length > 0 ? (
+                          <div className="flex flex-col gap-1">
+                            {pay.allowanceLabels.map((label, i) => (
+                              <span key={i} className="text-xs font-semibold text-[#6d4c41]">{label}</span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400">-</span>
+                        )}
+                      </td>
                     </>
                   )}
                 </tr>
@@ -124,7 +140,7 @@ export function HistoryTable({ records, staffList = [], isAdmin = true }: Histor
             })}
             {sortedAndFilteredRecords.length === 0 && (
               <tr>
-                <td colSpan={isAdmin ? 10 : 5} className="px-4 py-8 text-center text-[#8d6e63]">該当する勤務履歴はありません。</td>
+                <td colSpan={isAdmin ? 11 : 5} className="px-4 py-8 text-center text-[#8d6e63]">該当する勤務履歴はありません。</td>
               </tr>
             )}
           </tbody>

@@ -1,4 +1,4 @@
-import type { AttendanceRecord, AttendanceSummary, Staff } from "@/lib/types";
+import type { Allowance, AttendanceRecord, AttendanceSummary, Staff } from "@/lib/types";
 
 const STANDARD_WORK_MINUTES = 8 * 60;
 
@@ -25,6 +25,20 @@ function roundDownTo15Minutes(date: Date): Date {
   result.setMinutes(minutes - remainder);
   result.setSeconds(0, 0);
   return result;
+}
+
+export function getApplicableAllowances(record: AttendanceRecord, allowances: Allowance[]): Allowance[] {
+  return allowances.filter(
+    (a) => a.staffId === record.staffId && record.workDate >= a.startDate && record.workDate <= a.endDate,
+  );
+}
+
+export function getEffectiveHourlyWage(baseWage: number, allowances: Allowance[]): { wage: number; labels: string[] } {
+  const totalAddition = allowances.reduce((sum, a) => sum + a.hourlyAddition, 0);
+  return {
+    wage: baseWage + totalAddition,
+    labels: allowances.map((a) => `${a.name} +${a.hourlyAddition.toLocaleString()}円`),
+  };
 }
 
 export function getTodayKey(date = new Date()) {

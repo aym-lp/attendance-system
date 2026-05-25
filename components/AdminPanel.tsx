@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { AttendanceRecord, AttendanceSummary, CorrectionField, CorrectionHistory, Staff, StaffRole } from "@/lib/types";
+import type { Allowance, AttendanceRecord, AttendanceSummary, CorrectionField, CorrectionHistory, Staff, StaffRole } from "@/lib/types";
 import { formatCurrency, formatDateTime, formatMinutes, fromDateTimeInputValue, toDateTimeInputValue } from "@/lib/time";
 import { HistoryTable } from "@/components/HistoryTable";
+import { AllowancePanel } from "@/components/AllowancePanel";
 
 const correctionFieldLabel: Record<CorrectionField, string> = {
   clockIn: "出勤時間",
@@ -19,12 +20,15 @@ type AdminPanelProps = {
   correctionHistories: CorrectionHistory[];
   selectedMonth: string;
   monthlySummary: AttendanceSummary[];
+  allowances: Allowance[];
   onMonthChange: (value: string) => void;
   onExportCsv: (staffId: string, month: string) => void;
   onAddStaff: (staff: Omit<Staff, "id" | "isActive">) => void;
   onUpdateStaff: (id: string, staff: Partial<Omit<Staff, "id" | "isActive">>) => void;
   onUpdateRecord: (recordId: string, values: Pick<AttendanceRecord, CorrectionField>) => void;
   onCreateRecord: (record: Omit<AttendanceRecord, "workMinutes" | "overtimeMinutes" | "nightMinutes">) => void;
+  onAddAllowance: (allowance: Omit<Allowance, "id">) => void;
+  onDeleteAllowance: (id: string) => void;
 };
 
 function StaffDetailPanel({ staff, onUpdateStaff }: { staff: Staff; onUpdateStaff: AdminPanelProps["onUpdateStaff"] }) {
@@ -136,8 +140,8 @@ function StaffDetailPanel({ staff, onUpdateStaff }: { staff: Staff; onUpdateStaf
   );
 }
 
-export function AdminPanel({ isAdmin, staffList, records, correctionHistories, selectedMonth, monthlySummary, onMonthChange, onExportCsv, onAddStaff, onUpdateStaff, onUpdateRecord, onCreateRecord }: AdminPanelProps) {
-  const [currentView, setCurrentView] = useState<"menu" | "staff" | "history" | "correction" | "correctionHistory" | "monthly">("menu");
+export function AdminPanel({ isAdmin, staffList, records, correctionHistories, selectedMonth, monthlySummary, allowances, onMonthChange, onExportCsv, onAddStaff, onUpdateStaff, onUpdateRecord, onCreateRecord, onAddAllowance, onDeleteAllowance }: AdminPanelProps) {
+  const [currentView, setCurrentView] = useState<"menu" | "staff" | "history" | "correction" | "correctionHistory" | "monthly" | "allowance">("menu");
   const [historyStaffId, setHistoryStaffId] = useState("all");
   const [historyMonth, setHistoryMonth] = useState(selectedMonth);
   const [showStaffRegistration, setShowStaffRegistration] = useState(false);
@@ -155,7 +159,7 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
     return (
       <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
         <h2 className="text-2xl font-bold">勤務履歴</h2>
-        <HistoryTable records={records} staffList={staffList} isAdmin={isAdmin} />
+        <HistoryTable records={records} staffList={staffList} isAdmin={isAdmin} allowances={allowances} />
       </div>
     );
   }
@@ -171,6 +175,7 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
               <MenuButton label="打刻修正" onClick={() => setCurrentView("correction")} />
               <MenuButton label="修正履歴" onClick={() => setCurrentView("correctionHistory")} />
               <MenuButton label="月次集計" onClick={() => setCurrentView("monthly")} />
+              <MenuButton label="特別手当設定" onClick={() => setCurrentView("allowance")} />
             </>
           )}
           {!isAdmin && (
@@ -203,7 +208,20 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
           <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
           <h2 className="text-2xl font-bold">勤務履歴一覧</h2>
-          <HistoryTable records={records} staffList={staffList} isAdmin={isAdmin} />
+          <HistoryTable records={records} staffList={staffList} isAdmin={isAdmin} allowances={allowances} />
+        </div>
+      )}
+
+      {currentView === "allowance" && (
+        <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
+          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
+          <h2 className="text-2xl font-bold">特別手当設定</h2>
+          <AllowancePanel
+            allowances={allowances}
+            staffList={staffList}
+            onAddAllowance={onAddAllowance}
+            onDeleteAllowance={onDeleteAllowance}
+          />
         </div>
       )}
 

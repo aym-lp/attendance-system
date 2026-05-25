@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { AttendanceRecord, CorrectionField, CorrectionHistory, Staff } from "@/lib/types";
+import type { Allowance, AttendanceRecord, CorrectionField, CorrectionHistory, Staff } from "@/lib/types";
 import { buildMonthlySummary, createEmptyRecord, getTodayKey, recordsToCsv } from "@/lib/time";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { generateSeedData } from "@/lib/seedData";
@@ -17,6 +17,7 @@ export function AttendanceApp() {
   const [staffList, setStaffList] = useState(seedData.staff);
   const [records, setRecords] = useState<AttendanceRecord[]>(seedData.records);
   const [correctionHistories, setCorrectionHistories] = useState<CorrectionHistory[]>(seedData.histories);
+  const [allowances, setAllowances] = useState<Allowance[]>(seedData.allowances ?? []);
   const [message, setMessage] = useState("PINを入力してください");
   const [selectedMonth, setSelectedMonth] = useState(getTodayKey().slice(0, 7));
 
@@ -208,12 +209,15 @@ export function AttendanceApp() {
               correctionHistories={correctionHistories}
               selectedMonth={selectedMonth}
               monthlySummary={monthlySummary}
+              allowances={allowances}
               onMonthChange={setSelectedMonth}
               onExportCsv={exportCsv}
               onAddStaff={addStaff}
               onUpdateStaff={updateStaff}
               onUpdateRecord={updateAttendanceRecord}
               onCreateRecord={createAttendanceRecord}
+              onAddAllowance={(a) => { setAllowances((prev) => [...prev, { ...a, id: crypto.randomUUID() }]); setMessage(`手当「${a.name}」を登録しました`); }}
+              onDeleteAllowance={(id) => { setAllowances((prev) => prev.filter((x) => x.id !== id)); setMessage("手当を削除しました"); }}
             />
           </section>
         )}

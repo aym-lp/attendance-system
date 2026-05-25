@@ -61,3 +61,13 @@ export type CorrectionHistory = {
   correctedAt: string;
   reason: string;
 };
+
+export type Allowance = {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  staffId: string;
+  staffName: string;
+  hourlyAddition: number;
+};

@@ -134,6 +134,7 @@ function createSpecificRecord(staffId: string, staffName: string, dateStr: strin
 
 function generateOnobayashiRecords(staffId: string, staffName: string): AttendanceRecord[] {
   const data: [string, string, string, number][] = [
+    ["2026-01-02", "08:30", "18:00", 45],
     ["2026-05-01", "12:00", "18:00", 30],
     ["2026-05-02", "09:00", "18:00", 45],
     ["2026-05-03", "08:30", "13:30", 0],
@@ -160,7 +161,7 @@ export function generateSeedAttendanceRecords(staffList: Staff[]): AttendanceRec
 
   // 小野林茜の特定デモデータ
   const onobayashi = staffList.find((s) => s.id === "STF-003");
-  const onobayashiSpecificDates = new Set(["2026-05-01", "2026-05-02", "2026-05-03", "2026-05-05", "2026-05-06", "2026-05-08", "2026-05-09", "2026-05-10", "2026-05-11", "2026-05-12", "2026-05-14", "2026-05-15"]);
+  const onobayashiSpecificDates = new Set(["2026-01-02", "2026-05-01", "2026-05-02", "2026-05-03", "2026-05-05", "2026-05-06", "2026-05-08", "2026-05-09", "2026-05-10", "2026-05-11", "2026-05-12", "2026-05-14", "2026-05-15"]);
 
   if (onobayashi) {
     records.push(...generateOnobayashiRecords(onobayashi.id, onobayashi.name));
@@ -267,5 +268,17 @@ export function generateSeedData() {
   const histories = generateSeedCorrectionHistories(staff, records);
   const summaries = generateSeedMonthlySummary(staff, records);
 
-  return { staff, records, histories, summaries };
+  const allowances = [
+    {
+      id: crypto.randomUUID(),
+      name: "正月手当",
+      startDate: "2026-01-01",
+      endDate: "2026-01-03",
+      staffId: "STF-003",
+      staffName: "小野林 茜",
+      hourlyAddition: 500,
+    },
+  ];
+
+  return { staff, records, histories, summaries, allowances };
 }
