@@ -18,7 +18,7 @@ export function LoginPanel({ pin, message, onPinChange, onLogin }: LoginPanelPro
       <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-sm sm:p-8">
         <h2 className="text-2xl font-bold text-[#6d4c41]">PINログイン</h2>
         <p className="mt-2 text-[#8d6e63]">スタッフ別の4桁PINでログインします。</p>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-6">
           <input
             value={pin}
             onChange={(event) => handlePinChange(event.target.value)}
@@ -30,25 +30,26 @@ export function LoginPanel({ pin, message, onPinChange, onLogin }: LoginPanelPro
             }}
             inputMode="numeric"
             autoComplete="one-time-code"
-            className="h-16 flex-1 rounded-2xl border border-[#d7ccc8] px-5 text-center text-3xl font-bold tracking-[0.35em] outline-none focus:border-[#6d4c41] focus:ring-4 focus:ring-[#d7ccc8] text-[#3e2723]"
+            className="h-16 w-full rounded-2xl border border-[#d7ccc8] px-5 text-center text-3xl font-bold tracking-[0.35em] outline-none focus:border-[#6d4c41] focus:ring-4 focus:ring-[#d7ccc8] text-[#3e2723]"
             placeholder="----"
           />
-          <button
-            type="button"
-            onClick={() => onLogin(pin)}
-            onTouchEnd={(event) => {
-              event.preventDefault();
-              onLogin(pin);
-            }}
-            className="h-16 rounded-2xl bg-[#6d4c41] px-8 text-lg font-bold text-white shadow-sm active:scale-[0.99]"
-          >
-            ログイン
-          </button>
         </div>
-        <div className="mt-4 rounded-2xl bg-[#d7ccc8] px-4 py-3 text-sm text-[#3e2723]">
-          <p>{message}</p>
-          <p className="mt-1 font-semibold text-[#3e2723]">入力中PIN：{pin || "未入力"}</p>
-        </div>
+        <button
+          type="button"
+          onClick={() => onLogin(pin)}
+          onTouchEnd={(event) => {
+            event.preventDefault();
+            onLogin(pin);
+          }}
+          className="mt-4 h-16 w-full rounded-2xl bg-[#6d4c41] px-8 text-lg font-bold text-white shadow-sm active:scale-[0.99]"
+        >
+          ログイン
+        </button>
+        {message && (
+          <div className="mt-4 rounded-2xl bg-[#d7ccc8] px-4 py-3 text-sm text-[#3e2723]">
+            <p>{message}</p>
+          </div>
+        )}
       </div>
     </section>
   );

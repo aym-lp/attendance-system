@@ -40,10 +40,10 @@ export function AttendanceCard({ staff, record, message, onLogout, onClockIn, on
         </div>
 
         <div className="grid min-h-40 grid-cols-2 gap-3">
-          <ActionButton label="出勤" onClick={onClockIn} disabled={record?.status === "working" || record?.status === "break" || record?.status === "finished"} tone="green" />
-          <ActionButton label="退勤" onClick={onClockOut} disabled={!record?.clockIn || record?.status === "finished"} tone="red" />
-          <ActionButton label="休憩開始" onClick={onStartBreak} disabled={record?.status !== "working"} tone="orange" />
-          <ActionButton label="休憩終了" onClick={onEndBreak} disabled={record?.status !== "break"} tone="blue" />
+          <ActionButton label="出勤" onClick={onClockIn} disabled={record?.status === "working" || record?.status === "break" || record?.status === "finished"} tone="brown" />
+          <ActionButton label="退勤" onClick={onClockOut} disabled={!record?.clockIn || record?.status === "finished"} tone="darkOrange" />
+          <ActionButton label="休憩開始" onClick={onStartBreak} disabled={record?.status !== "working"} tone="cream" />
+          <ActionButton label="休憩終了" onClick={onEndBreak} disabled={record?.status !== "break"} tone="darkCream" />
         </div>
       </div>
       <p className="mt-4 rounded-2xl bg-[#d7ccc8] px-4 py-3 text-sm font-medium text-[#3e2723]">{message}</p>
@@ -60,12 +60,12 @@ function Info({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ActionButton({ label, onClick, disabled, tone }: { label: string; onClick: () => void; disabled?: boolean; tone: "green" | "red" | "orange" | "blue" }) {
+function ActionButton({ label, onClick, disabled, tone }: { label: string; onClick: () => void; disabled?: boolean; tone: "brown" | "darkOrange" | "cream" | "darkCream" }) {
   const tones = {
-    green: "bg-emerald-600 text-white",
-    red: "bg-red-600 text-white",
-    orange: "bg-orange-500 text-white",
-    blue: "bg-blue-600 text-white",
+    brown: "bg-[#6d4c41] text-white",
+    darkOrange: "bg-[#d84315] text-white",
+    cream: "bg-[#fff8e1] text-[#3e2723]",
+    darkCream: "bg-[#ffecb3] text-[#3e2723]",
   };
 
   return (
