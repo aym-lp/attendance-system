@@ -1,10 +1,12 @@
 import type { Staff, AttendanceRecord, CorrectionHistory, AttendanceSummary, StaffRole, CorrectionField } from "@/lib/types";
 
 const staffNames = [
-  { name: "細田 径弘", kana: "ホソダ ミチヒロ", role: "admin" as StaffRole, hourlyWage: 1500, transportationAllowance: 5000 },
-  { name: "佐藤 花子", kana: "サトウ ハナコ", role: "staff" as StaffRole, hourlyWage: 1200, transportationAllowance: 3000 },
-  { name: "鈴木 一郎", kana: "スズキ イチロウ", role: "staff" as StaffRole, hourlyWage: 1100, transportationAllowance: 2000 },
-  { name: "高橋 美咲", kana: "タカハシ ミサキ", role: "staff" as StaffRole, hourlyWage: 1250, transportationAllowance: 3500 },
+  { name: "細田 径弘", kana: "ホソダ ミチヒロ", role: "manager" as StaffRole, hourlyWage: 0, transportationAllowance: 0 },
+  { name: "和島 亜純", kana: "ワジマ アジュン", role: "staff" as StaffRole, hourlyWage: 1310, transportationAllowance: 0 },
+  { name: "小野 林茜", kana: "オノ リンカ", role: "staff" as StaffRole, hourlyWage: 1207, transportationAllowance: 0 },
+  { name: "樋口 凛", kana: "ヒグチ リン", role: "staff" as StaffRole, hourlyWage: 1177, transportationAllowance: 0 },
+  { name: "杉本 羅希", kana: "スギモト ラキ", role: "staff" as StaffRole, hourlyWage: 1177, transportationAllowance: 0 },
+  { name: "出嶋 晴翔", kana: "イズシマ ハルト", role: "staff" as StaffRole, hourlyWage: 1177, transportationAllowance: 0 },
 ];
 
 export function generateSeedStaff(): Staff[] {

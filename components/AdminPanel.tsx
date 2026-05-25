@@ -137,7 +137,7 @@ function StaffDetailPanel({ staff, onUpdateStaff }: { staff: Staff; onUpdateStaf
 }
 
 export function AdminPanel({ isAdmin, staffList, records, correctionHistories, selectedMonth, monthlySummary, onMonthChange, onExportCsv, onAddStaff, onUpdateStaff, onUpdateRecord, onCreateRecord }: AdminPanelProps) {
-  const [currentView, setCurrentView] = useState<"menu" | "staff" | "history" | "correction" | "correctionHistory" | "monthly" | "settings">("menu");
+  const [currentView, setCurrentView] = useState<"menu" | "staff" | "history" | "correction" | "correctionHistory" | "monthly">("menu");
   const [historyStaffId, setHistoryStaffId] = useState("all");
   const [historyMonth, setHistoryMonth] = useState(selectedMonth);
   const [showStaffRegistration, setShowStaffRegistration] = useState(false);
@@ -163,13 +163,12 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
   return (
     <div className="space-y-5">
       {currentView === "menu" && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <MenuButton icon="" label="スタッフ一覧" onClick={() => setCurrentView("staff")} />
-          <MenuButton icon="📋" label="勤務履歴一覧" onClick={() => setCurrentView("history")} />
-          <MenuButton icon="✏️" label="打刻修正" onClick={() => setCurrentView("correction")} />
-          <MenuButton icon="📝" label="修正履歴" onClick={() => setCurrentView("correctionHistory")} />
-          <MenuButton icon="📅" label="月次集計" onClick={() => setCurrentView("monthly")} />
-          <MenuButton icon="⚙️" label="設定" onClick={() => setCurrentView("settings")} />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <MenuButton label="スタッフ一覧" onClick={() => setCurrentView("staff")} />
+          <MenuButton label="勤務履歴一覧" onClick={() => setCurrentView("history")} />
+          <MenuButton label="打刻修正" onClick={() => setCurrentView("correction")} />
+          <MenuButton label="修正履歴" onClick={() => setCurrentView("correctionHistory")} />
+          <MenuButton label="月次集計" onClick={() => setCurrentView("monthly")} />
         </div>
       )}
 
@@ -248,14 +247,6 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
             ))}
             {monthlySummary.length === 0 && <p className="text-sm text-slate-500">対象月の勤務データはまだありません。</p>}
           </div>
-        </div>
-      )}
-
-      {currentView === "settings" && (
-        <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
-          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
-          <h2 className="text-2xl font-bold">設定</h2>
-          <p className="mt-4 text-sm text-slate-500">設定機能は準備中です。</p>
         </div>
       )}
 
@@ -557,11 +548,10 @@ function DateTimeInput({ label, value, onChange }: { label: string; value: strin
   return <label className="text-sm font-semibold">{label}<input type="datetime-local" value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-950" /></label>;
 }
 
-function MenuButton({ icon, label, onClick }: { icon: string; label: string; onClick: () => void }) {
+function MenuButton({ icon, label, onClick }: { icon?: string; label: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="min-h-32 rounded-3xl border border-slate-200 bg-white p-6 text-left shadow-sm hover:bg-slate-50 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800">
-      <div className="text-4xl">{icon}</div>
-      <p className="mt-3 text-lg font-bold">{label}</p>
+    <button onClick={onClick} className="min-h-16 rounded-2xl border border-[#d7ccc8] bg-white px-5 py-3 text-left shadow-sm hover:bg-[#faf8f5] active:scale-[0.98]">
+      <p className="text-base font-bold text-[#3e2723]">{label}</p>
     </button>
   );
 }

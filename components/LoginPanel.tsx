@@ -16,7 +16,7 @@ export function LoginPanel({ pin, message, onPinChange, onLogin }: LoginPanelPro
   return (
     <section className="flex justify-center">
       <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-sm sm:p-8">
-        <h2 className="text-2xl font-bold text-[#6d4c41]">PINログイン</h2>
+        <h2 className="text-2xl font-bold text-[#6d4c41]">勤怠管理ログイン</h2>
         <div className="mt-6">
           <input
             value={pin}
@@ -44,11 +44,6 @@ export function LoginPanel({ pin, message, onPinChange, onLogin }: LoginPanelPro
         >
           ログイン
         </button>
-        {message && (
-          <div className="mt-4 rounded-2xl bg-[#d7ccc8] px-4 py-3 text-sm text-[#3e2723]">
-            <p>{message}</p>
-          </div>
-        )}
       </div>
     </section>
   );
