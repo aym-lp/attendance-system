@@ -3,7 +3,7 @@ import type { Staff, AttendanceRecord, CorrectionHistory, AttendanceSummary, Sta
 const staffNames = [
   { name: "細田 径弘", kana: "ホソダ ミチヒロ", role: "manager" as StaffRole, hourlyWage: 0, transportationAllowance: 0 },
   { name: "和島 亜純", kana: "ワジマ アジュン", role: "staff" as StaffRole, hourlyWage: 1310, transportationAllowance: 0 },
-  { name: "小野 林茜", kana: "オノ リンカ", role: "staff" as StaffRole, hourlyWage: 1207, transportationAllowance: 0 },
+  { name: "小野林 茜", kana: "オノバヤシ アカネ", role: "staff" as StaffRole, hourlyWage: 1207, transportationAllowance: 0 },
   { name: "樋口 凛", kana: "ヒグチ リン", role: "staff" as StaffRole, hourlyWage: 1177, transportationAllowance: 0 },
   { name: "杉本 羅希", kana: "スギモト ラキ", role: "staff" as StaffRole, hourlyWage: 1177, transportationAllowance: 0 },
   { name: "出嶋 晴翔", kana: "イズシマ ハルト", role: "staff" as StaffRole, hourlyWage: 1177, transportationAllowance: 0 },
@@ -14,7 +14,7 @@ export function generateSeedStaff(): Staff[] {
     id: `STF-${(index + 1).toString().padStart(3, "0")}`,
     name: staff.name,
     kana: staff.kana,
-    pin: index === 0 ? "9999" : Math.floor(1000 + Math.random() * 9000).toString(),
+    pin: ["9999", "1111", "2222", "3333", "4444", "5555"][index],
     role: staff.role,
     hourlyWage: staff.hourlyWage,
     transportationAllowance: staff.transportationAllowance,
