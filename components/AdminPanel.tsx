@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Allowance, AttendanceRecord, AttendanceSummary, CorrectionField, CorrectionHistory, Staff, StaffRole } from "@/lib/types";
 import { formatCurrency, formatDateTime, formatMinutes, fromDateTimeInputValue, toDateTimeInputValue } from "@/lib/time";
 import { HistoryTable } from "@/components/HistoryTable";
@@ -469,7 +469,7 @@ function AttendanceCorrectionPanel({ staffList, records, onUpdateRecord, onCreat
         {selectedStaffId && (
           <div>
             <p className="mb-2 text-sm font-semibold">日付を選択</p>
-            <input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-950" />
+            <DatePickerInput value={selectedDate} onChange={(value) => setSelectedDate(value)} />
           </div>
         )}
         {selectedStaffId && selectedDate && (
@@ -571,6 +571,135 @@ function Input({ label, value, onChange, inputMode }: { label: string; value: st
 
 function DateTimeInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return <label className="text-sm font-semibold">{label}<input type="datetime-local" value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-950" /></label>;
+}
+
+function DatePickerInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [viewDate, setViewDate] = useState(() => value ? new Date(value + "T00:00:00") : new Date());
+  const [inputValue, setInputValue] = useState(() => value ? value.replace(/-/g, "/") : "");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (value) {
+      setInputValue(value.replace(/-/g, "/"));
+      setViewDate(new Date(value + "T00:00:00"));
+    } else {
+      setInputValue("");
+    }
+  }, [value]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleInputChange = (text: string) => {
+    const digits = text.replace(/\D/g, "");
+    let formatted = "";
+    if (digits.length >= 8) {
+      formatted = `${digits.slice(0, 4)}/${digits.slice(4, 6)}/${digits.slice(6, 8)}`;
+    } else if (digits.length >= 6) {
+      formatted = `${digits.slice(0, 4)}/${digits.slice(4, 6)}${digits.length > 6 ? "/" + digits.slice(6) : ""}`;
+    } else if (digits.length >= 4) {
+      formatted = `${digits.slice(0, 4)}${digits.length > 4 ? "/" + digits.slice(4) : ""}`;
+    } else {
+      formatted = digits;
+    }
+    setInputValue(formatted);
+    if (digits.length === 8) {
+      const y = digits.slice(0, 4);
+      const m = digits.slice(4, 6);
+      const d = digits.slice(6, 8);
+      const dateStr = `${y}-${m}-${d}`;
+      if (!isNaN(new Date(dateStr + "T00:00:00").getTime())) {
+        onChange(dateStr);
+        setViewDate(new Date(dateStr + "T00:00:00"));
+      }
+    } else if (digits.length < 8) {
+      onChange("");
+    }
+  };
+
+  const selectDate = (year: number, month: number, day: number) => {
+    const mm = String(month + 1).padStart(2, "0");
+    const dd = String(day).padStart(2, "0");
+    const dateStr = `${year}-${mm}-${dd}`;
+    onChange(dateStr);
+    setOpen(false);
+  };
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
+  const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
+
+  const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+  const days: number[] = [];
+  for (let i = 0; i < firstDay; i++) days.push(0);
+  for (let i = 1; i <= daysInMonth; i++) days.push(i);
+
+  const selectedDay = value ? Number(value.slice(8, 10)) : 0;
+  const selectedMonth = value ? Number(value.slice(5, 7)) - 1 : -1;
+  const selectedYear = value ? Number(value.slice(0, 4)) : 0;
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="flex items-stretch">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="flex items-center justify-center rounded-l-2xl border border-r-0 border-slate-200 bg-[#faf8f5] px-3 text-lg text-[#6d4c41] dark:border-slate-700 dark:bg-slate-800"
+          title="カレンダー"
+        >
+          📅
+        </button>
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => handleInputChange(e.target.value)}
+          placeholder="YYYY/MM/DD"
+          className="min-h-12 w-full rounded-r-2xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-[#6d4c41] dark:border-slate-700 dark:bg-slate-950"
+        />
+      </div>
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-1 w-72 rounded-2xl border border-[#d7ccc8] bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+          <div className="mb-2 flex items-center justify-between">
+            <button type="button" onClick={prevMonth} className="rounded-lg px-2 py-1 text-sm font-bold text-[#6d4c41] hover:bg-[#faf8f5]">←</button>
+            <span className="text-sm font-bold text-[#3e2723]">{year}年 {month + 1}月</span>
+            <button type="button" onClick={nextMonth} className="rounded-lg px-2 py-1 text-sm font-bold text-[#6d4c41] hover:bg-[#faf8f5]">→</button>
+          </div>
+          <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-slate-500">
+            {weekDays.map((d) => <div key={d}>{d}</div>)}
+          </div>
+          <div className="mt-1 grid grid-cols-7 gap-1">
+            {days.map((day, index) => (
+              day === 0 ? <div key={`empty-${index}`} /> : (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => selectDate(year, month, day)}
+                  className={`h-8 w-8 rounded-full text-sm ${
+                    day === selectedDay && month === selectedMonth && year === selectedYear
+                      ? "bg-[#6d4c41] font-bold text-white"
+                      : "text-[#3e2723] hover:bg-[#faf8f5]"
+                  }`}
+                >
+                  {day}
+                </button>
+              )
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function MenuButton({ icon, label, onClick }: { icon?: string; label: string; onClick: () => void }) {
