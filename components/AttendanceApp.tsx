@@ -25,7 +25,13 @@ export function AttendanceApp() {
     return records.find((record) => record.staffId === currentStaff.id && record.workDate === getTodayKey()) ?? null;
   }, [currentStaff, records]);
 
-  const monthlySummary = useMemo(() => buildMonthlySummary(records, selectedMonth, staffList), [records, selectedMonth, staffList]);
+  const displayRecords = useMemo(() => {
+    if (!currentStaff) return records;
+    if (currentStaff.role === "manager" || currentStaff.role === "admin") return records;
+    return records.filter((record) => record.staffId === currentStaff.id);
+  }, [records, currentStaff]);
+
+  const monthlySummary = useMemo(() => buildMonthlySummary(displayRecords, selectedMonth, staffList), [displayRecords, selectedMonth, staffList]);
 
   const login = (pinValue = pin) => {
     const normalizedPin = pinValue.trim();
@@ -198,7 +204,7 @@ export function AttendanceApp() {
             <AdminPanel
               isAdmin={currentStaff.role === "admin" || currentStaff.role === "manager"}
               staffList={staffList}
-              records={records}
+              records={displayRecords}
               correctionHistories={correctionHistories}
               selectedMonth={selectedMonth}
               monthlySummary={monthlySummary}

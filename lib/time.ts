@@ -8,6 +8,25 @@ export function roundUpBreakMinutes(minutes: number): { rounded: number; error: 
   return { rounded: minutes, error: true };
 }
 
+function roundUpTo15Minutes(date: Date): Date {
+  const result = new Date(date);
+  const minutes = result.getMinutes();
+  const remainder = minutes % 15;
+  if (remainder === 0) return result;
+  result.setMinutes(minutes + (15 - remainder));
+  result.setSeconds(0, 0);
+  return result;
+}
+
+function roundDownTo15Minutes(date: Date): Date {
+  const result = new Date(date);
+  const minutes = result.getMinutes();
+  const remainder = minutes % 15;
+  result.setMinutes(minutes - remainder);
+  result.setSeconds(0, 0);
+  return result;
+}
+
 export function getTodayKey(date = new Date()) {
   return new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Asia/Tokyo",
@@ -48,8 +67,18 @@ export function formatMinutes(minutes: number) {
 export function getWorkedMinutes(record: AttendanceRecord, now = new Date()) {
   if (!record.clockIn) return 0;
 
-  const start = parseTime(record.clockIn)?.getTime() ?? 0;
-  const end = record.clockOut ? parseTime(record.clockOut)?.getTime() ?? now.getTime() : now.getTime();
+  const rawStart = parseTime(record.clockIn);
+  if (!rawStart) return 0;
+  const start = roundUpTo15Minutes(rawStart).getTime();
+
+  let end: number;
+  if (record.clockOut) {
+    const rawEnd = parseTime(record.clockOut);
+    end = rawEnd ? roundDownTo15Minutes(rawEnd).getTime() : now.getTime();
+  } else {
+    end = now.getTime();
+  }
+
   const currentBreak = record.breakStart && !record.breakEnd ? Math.max(0, now.getTime() - (parseTime(record.breakStart)?.getTime() ?? now.getTime())) / 60000 : 0;
   const gross = Math.max(0, (end - start) / 60000);
 
