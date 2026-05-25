@@ -14,8 +14,8 @@ export function LoginPanel({ pin, message, onPinChange, onLogin }: LoginPanelPro
   };
 
   return (
-    <section className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-      <div className="rounded-3xl bg-white p-6 shadow-sm sm:p-8">
+    <section className="flex justify-center">
+      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-sm sm:p-8">
         <h2 className="text-2xl font-bold text-[#6d4c41]">PINログイン</h2>
         <p className="mt-2 text-[#8d6e63]">スタッフ別の4桁PINでログインします。</p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -48,14 +48,6 @@ export function LoginPanel({ pin, message, onPinChange, onLogin }: LoginPanelPro
         <div className="mt-4 rounded-2xl bg-[#d7ccc8] px-4 py-3 text-sm text-[#3e2723]">
           <p>{message}</p>
           <p className="mt-1 font-semibold text-[#3e2723]">入力中PIN：{pin || "未入力"}</p>
-        </div>
-      </div>
-
-      <div className="rounded-3xl bg-[#6d4c41] p-6 text-white shadow-sm sm:p-8">
-        <h2 className="text-xl font-bold">デモPIN</h2>
-        <div className="mt-4 space-y-3 text-sm">
-          <p className="rounded-2xl bg-white/20 p-4">スタッフ：1111 / 2222</p>
-          <p className="rounded-2xl bg-white/20 p-4">管理者：9999</p>
         </div>
       </div>
     </section>

@@ -40,10 +40,10 @@ export function AttendanceCard({ staff, record, message, onLogout, onClockIn, on
         </div>
 
         <div className="grid min-h-40 grid-cols-2 gap-3">
-          <ActionButton label="出勤" onClick={onClockIn} disabled={record?.status === "working" || record?.status === "break" || record?.status === "finished"} tone="brown" />
-          <ActionButton label="退勤" onClick={onClockOut} disabled={!record?.clockIn || record?.status === "finished"} tone="dark" />
-          <ActionButton label="休憩開始" onClick={onStartBreak} disabled={record?.status !== "working"} tone="light" />
-          <ActionButton label="休憩終了" onClick={onEndBreak} disabled={record?.status !== "break"} tone="secondary" />
+          <ActionButton label="出勤" onClick={onClockIn} disabled={record?.status === "working" || record?.status === "break" || record?.status === "finished"} tone="green" />
+          <ActionButton label="退勤" onClick={onClockOut} disabled={!record?.clockIn || record?.status === "finished"} tone="red" />
+          <ActionButton label="休憩開始" onClick={onStartBreak} disabled={record?.status !== "working"} tone="orange" />
+          <ActionButton label="休憩終了" onClick={onEndBreak} disabled={record?.status !== "break"} tone="blue" />
         </div>
       </div>
       <p className="mt-4 rounded-2xl bg-[#d7ccc8] px-4 py-3 text-sm font-medium text-[#3e2723]">{message}</p>
@@ -60,12 +60,12 @@ function Info({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ActionButton({ label, onClick, disabled, tone }: { label: string; onClick: () => void; disabled?: boolean; tone: "brown" | "dark" | "light" | "secondary" }) {
+function ActionButton({ label, onClick, disabled, tone }: { label: string; onClick: () => void; disabled?: boolean; tone: "green" | "red" | "orange" | "blue" }) {
   const tones = {
-    brown: "bg-[#6d4c41] text-white",
-    dark: "bg-[#3e2723] text-white",
-    light: "bg-[#d7ccc8] text-[#3e2723]",
-    secondary: "bg-[#8d6e63] text-white",
+    green: "bg-emerald-600 text-white",
+    red: "bg-red-600 text-white",
+    orange: "bg-orange-500 text-white",
+    blue: "bg-blue-600 text-white",
   };
 
   return (
