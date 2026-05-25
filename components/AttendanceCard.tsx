@@ -19,18 +19,18 @@ export function AttendanceCard({ staff, record, message, onLogout, onClockIn, on
   return (
     <div className="rounded-3xl bg-white p-5 shadow-sm sm:p-6">
       <div className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr_1fr] xl:items-stretch">
-        <div className="flex min-h-40 flex-col justify-between rounded-3xl border border-slate-100 p-5">
+        <div className="flex min-h-40 flex-col justify-between rounded-3xl border border-[#d7ccc8] p-5">
           <div>
-            <p className="text-sm font-semibold text-slate-500">ログイン中</p>
-            <h2 className="mt-1 text-3xl font-bold">{staff.name}</h2>
-            <p className="mt-2 text-sm text-slate-500">{staff.role === "admin" ? "管理者" : "スタッフ"}</p>
+            <p className="text-sm font-semibold text-[#8d6e63]">ログイン中</p>
+            <h2 className="mt-1 text-3xl font-bold text-[#3e2723]">{staff.name}</h2>
+            <p className="mt-2 text-sm text-[#8d6e63]">{staff.role === "admin" ? "管理者" : "スタッフ"}</p>
           </div>
-          <button onClick={onLogout} className="mt-4 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold">ログアウト</button>
+          <button onClick={onLogout} className="mt-4 rounded-full border border-[#d7ccc8] px-4 py-2 text-sm font-semibold text-[#6d4c41]">ログアウト</button>
         </div>
 
-        <div className="min-h-40 rounded-3xl bg-slate-50 p-5">
-          <p className="text-sm font-semibold text-slate-500">本日の状態</p>
-          <p className="mt-2 text-4xl font-bold text-blue-600">{statusLabel[record?.status ?? "off"]}</p>
+        <div className="min-h-40 rounded-3xl bg-[#d7ccc8] p-5">
+          <p className="text-sm font-semibold text-[#6d4c41]">本日の状態</p>
+          <p className="mt-2 text-4xl font-bold text-[#3e2723]">{statusLabel[record?.status ?? "off"]}</p>
           <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
             <Info label="出勤" value={formatDateTime(record?.clockIn ?? null)} />
             <Info label="退勤" value={formatDateTime(record?.clockOut ?? null)} />
@@ -40,13 +40,13 @@ export function AttendanceCard({ staff, record, message, onLogout, onClockIn, on
         </div>
 
         <div className="grid min-h-40 grid-cols-2 gap-3">
-          <ActionButton label="出勤" onClick={onClockIn} disabled={record?.status === "working" || record?.status === "break" || record?.status === "finished"} tone="blue" />
-          <ActionButton label="退勤" onClick={onClockOut} disabled={!record?.clockIn || record?.status === "finished"} tone="slate" />
-          <ActionButton label="休憩開始" onClick={onStartBreak} disabled={record?.status !== "working"} tone="amber" />
-          <ActionButton label="休憩終了" onClick={onEndBreak} disabled={record?.status !== "break"} tone="emerald" />
+          <ActionButton label="出勤" onClick={onClockIn} disabled={record?.status === "working" || record?.status === "break" || record?.status === "finished"} tone="brown" />
+          <ActionButton label="退勤" onClick={onClockOut} disabled={!record?.clockIn || record?.status === "finished"} tone="dark" />
+          <ActionButton label="休憩開始" onClick={onStartBreak} disabled={record?.status !== "working"} tone="light" />
+          <ActionButton label="休憩終了" onClick={onEndBreak} disabled={record?.status !== "break"} tone="secondary" />
         </div>
       </div>
-      <p className="mt-4 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">{message}</p>
+      <p className="mt-4 rounded-2xl bg-[#d7ccc8] px-4 py-3 text-sm font-medium text-[#3e2723]">{message}</p>
     </div>
   );
 }
@@ -60,12 +60,12 @@ function Info({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ActionButton({ label, onClick, disabled, tone }: { label: string; onClick: () => void; disabled?: boolean; tone: "blue" | "slate" | "amber" | "emerald" }) {
+function ActionButton({ label, onClick, disabled, tone }: { label: string; onClick: () => void; disabled?: boolean; tone: "brown" | "dark" | "light" | "secondary" }) {
   const tones = {
-    blue: "bg-blue-600 text-white",
-    slate: "bg-slate-900 text-white",
-    amber: "bg-amber-500 text-white",
-    emerald: "bg-emerald-600 text-white",
+    brown: "bg-[#6d4c41] text-white",
+    dark: "bg-[#3e2723] text-white",
+    light: "bg-[#d7ccc8] text-[#3e2723]",
+    secondary: "bg-[#8d6e63] text-white",
   };
 
   return (

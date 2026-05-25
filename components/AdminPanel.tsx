@@ -97,7 +97,7 @@ function StaffDetailPanel({ staff, onUpdateStaff }: { staff: Staff; onUpdateStaf
           <label className="text-sm font-semibold">メモ欄<textarea value={memo} onChange={(event) => setMemo(event.target.value)} className="mt-1 min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-950" /></label>
           {error && <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
           <div className="flex gap-2">
-            <button onClick={save} className="min-h-12 flex-1 rounded-2xl bg-blue-600 px-6 font-bold text-white">保存</button>
+            <button onClick={save} className="min-h-12 flex-1 rounded-2xl bg-[#6d4c41] px-6 font-bold text-white">保存</button>
             <button onClick={cancel} className="min-h-12 flex-1 rounded-2xl bg-slate-200 px-6 font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-300">キャンセル</button>
           </div>
         </div>
@@ -176,7 +176,7 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
 
       {currentView === "today" && (
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
-          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-blue-600">← メニューに戻る</button>
+          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
           <h2 className="text-2xl font-bold">本日の勤怠確認</h2>
           <HistoryTable records={records.filter((r) => r.workDate === new Date().toISOString().split("T")[0])} />
         </div>
@@ -184,10 +184,10 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
 
       {currentView === "staff" && (
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
-          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-blue-600">← メニューに戻る</button>
+          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-2xl font-bold">スタッフ一覧</h2>
-            <button onClick={() => setShowStaffRegistration(true)} className="rounded-2xl bg-blue-600 px-5 py-3 font-bold text-white">スタッフ登録</button>
+            <button onClick={() => setShowStaffRegistration(true)} className="rounded-2xl bg-[#6d4c41] px-5 py-3 font-bold text-white">スタッフ登録</button>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {[...staffList].sort((a, b) => {
@@ -204,7 +204,7 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
 
       {currentView === "history" && (
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
-          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-blue-600">← メニューに戻る</button>
+          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
           <h2 className="text-2xl font-bold">勤務履歴一覧</h2>
           <HistoryTable records={records} />
         </div>
@@ -212,17 +212,17 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
 
       {currentView === "correction" && (
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
-          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-blue-600">← メニューに戻る</button>
+          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
           <AttendanceCorrectionPanel staffList={staffList} records={records} onUpdateRecord={onUpdateRecord} onCreateRecord={onCreateRecord} />
         </div>
       )}
 
       {currentView === "correctionHistory" && (
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
-          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-blue-600">← メニューに戻る</button>
+          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-blue-600">削除不可・新しい順</p>
+              <p className="text-sm font-semibold text-[#6d4c41]">削除不可・新しい順</p>
               <h2 className="text-2xl font-bold">打刻修正履歴</h2>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -239,10 +239,10 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
 
       {currentView === "monthly" && (
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
-          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-blue-600">← メニューに戻る</button>
+          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-blue-600">給与設定</p>
+              <p className="text-sm font-semibold text-[#6d4c41]">給与設定</p>
               <h2 className="text-2xl font-bold">月次集計</h2>
               <p className="mt-1 text-sm text-slate-500">月末締め固定 / 支払日25日固定 / 全スタッフ共通</p>
             </div>
@@ -262,7 +262,7 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
 
       {currentView === "settings" && (
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
-          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-blue-600">← メニューに戻る</button>
+          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
           <h2 className="text-2xl font-bold">設定</h2>
           <p className="mt-4 text-sm text-slate-500">設定機能は準備中です。</p>
         </div>
@@ -326,9 +326,9 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
               </div>
               <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
                 <p className="text-sm text-slate-500">合計支給額</p>
-                <p className="text-2xl font-bold text-blue-600">{formatCurrency(selectedSummary.totalPay)}</p>
+                <p className="text-2xl font-bold text-[#6d4c41]">{formatCurrency(selectedSummary.totalPay)}</p>
               </div>
-              <button onClick={() => onExportCsv(selectedSummary.staffId, selectedSummary.month)} className="min-h-14 w-full rounded-2xl bg-blue-600 px-6 font-bold text-white">CSV出力</button>
+              <button onClick={() => onExportCsv(selectedSummary.staffId, selectedSummary.month)} className="min-h-14 w-full rounded-2xl bg-[#6d4c41] px-6 font-bold text-white">CSV出力</button>
             </div>
           </div>
         </div>
@@ -390,7 +390,7 @@ function StaffRegistrationPanel({ onAddStaff, onClose }: { onAddStaff: AdminPane
         <label className="text-sm font-semibold md:col-span-2">メモ欄<textarea value={memo} onChange={(event) => setMemo(event.target.value)} className="mt-1 min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-950" /></label>
       </div>
       {error && <p className="mt-3 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
-      <button onClick={submit} className="mt-4 min-h-14 rounded-2xl bg-blue-600 px-6 font-bold text-white">スタッフを登録</button>
+      <button onClick={submit} className="mt-4 min-h-14 rounded-2xl bg-[#6d4c41] px-6 font-bold text-white">スタッフを登録</button>
     </section>
   );
 }
@@ -477,7 +477,7 @@ function AttendanceCorrectionPanel({ staffList, records, onUpdateRecord, onCreat
                   <DateTimeInput label="休憩開始" value={values.breakStart} onChange={(value) => setValues((prev) => ({ ...prev, breakStart: value }))} />
                   <DateTimeInput label="休憩終了" value={values.breakEnd} onChange={(value) => setValues((prev) => ({ ...prev, breakEnd: value }))} />
                 </div>
-                <button onClick={submit} className="mt-4 min-h-14 w-full rounded-2xl bg-amber-500 px-6 font-bold text-white">打刻を修正</button>
+                <button onClick={submit} className="mt-4 min-h-14 w-full rounded-2xl bg-[#8d6e63] px-6 font-bold text-white">打刻を修正</button>
               </div>
             ) : (
               <div>
@@ -505,7 +505,7 @@ function AttendanceCorrectionPanel({ staffList, records, onUpdateRecord, onCreat
                         <button
                           key={field}
                           onClick={() => setSelectedField(field)}
-                          className={`min-h-12 rounded-2xl px-4 font-semibold ${selectedField === field ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"}`}
+                          className={`min-h-12 rounded-2xl px-4 font-semibold ${selectedField === field ? "bg-[#6d4c41] text-white" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"}`}
                         >
                           {correctionFieldLabel[field]}
                         </button>
@@ -520,7 +520,7 @@ function AttendanceCorrectionPanel({ staffList, records, onUpdateRecord, onCreat
                   </div>
                 )}
                 {selectedField && (
-                  <button onClick={submit} className="mt-4 min-h-14 w-full rounded-2xl bg-amber-500 px-6 font-bold text-white">打刻を修正</button>
+                  <button onClick={submit} className="mt-4 min-h-14 w-full rounded-2xl bg-[#8d6e63] px-6 font-bold text-white">打刻を修正</button>
                 )}
               </div>
             )}

@@ -176,29 +176,13 @@ export function AttendanceApp() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950">
+    <main className="min-h-screen bg-[#faf8f5] text-[#3e2723]">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
-        <header className="rounded-3xl bg-white p-5 shadow-sm sm:p-7">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-blue-600">店舗アルバイト勤怠管理</p>
-              <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">小川勤怠</h1>
-              <p className="mt-2 text-sm text-slate-500">iPad・スマホで使いやすいPIN打刻システム</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-              <p className="font-semibold">Supabase</p>
-              <p className={isSupabaseConfigured ? "text-emerald-600" : "text-amber-600"}>
-                {isSupabaseConfigured ? "接続設定済み" : "未設定：ローカル表示モード"}
-              </p>
-            </div>
-          </div>
-        </header>
-
         {!currentStaff ? (
           <LoginPanel pin={pin} message={message} onPinChange={setPin} onLogin={login} />
         ) : (
           <section className="flex flex-col gap-5">
-            <div className="rounded-3xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">
+            <div className="rounded-3xl bg-[#d7ccc8] p-4 text-sm font-semibold text-[#3e2723]">
               ログイン成功：{currentStaff.name}
             </div>
             <AttendanceCard
