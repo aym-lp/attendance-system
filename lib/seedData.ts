@@ -50,14 +50,32 @@ function generateAttendanceForDay(staffId: string, staffName: string, date: Date
     baseClockOut.setHours(22 + Math.floor(Math.random() * 2));
   }
 
-  const breakStart = new Date(date);
-  breakStart.setHours(12, 0, 0, 0);
+  const breakPattern = Math.random();
+  let breakStart: Date | null = null;
+  let breakEnd: Date | null = null;
+  let totalBreakMinutes = 0;
 
-  const breakEnd = new Date(date);
-  breakEnd.setHours(13, 0, 0, 0);
+  if (breakPattern < 0.3) {
+    totalBreakMinutes = 30;
+    breakStart = new Date(date);
+    breakStart.setHours(12, 0, 0, 0);
+    breakEnd = new Date(date);
+    breakEnd.setHours(12, 30, 0, 0);
+  } else if (breakPattern < 0.7) {
+    totalBreakMinutes = 45;
+    breakStart = new Date(date);
+    breakStart.setHours(12, 0, 0, 0);
+    breakEnd = new Date(date);
+    breakEnd.setHours(12, 45, 0, 0);
+  } else {
+    totalBreakMinutes = 60;
+    breakStart = new Date(date);
+    breakStart.setHours(12, 0, 0, 0);
+    breakEnd = new Date(date);
+    breakEnd.setHours(13, 0, 0, 0);
+  }
 
-  const workMinutes = (baseClockOut.getTime() - baseClockIn.getTime()) / 1000 / 60 - 60;
-  const totalBreakMinutes = 60;
+  const workMinutes = (baseClockOut.getTime() - baseClockIn.getTime()) / 1000 / 60 - totalBreakMinutes;
 
   return {
     id: crypto.randomUUID(),
@@ -66,8 +84,8 @@ function generateAttendanceForDay(staffId: string, staffName: string, date: Date
     workDate: date.toISOString().split("T")[0],
     clockIn: formatTime(baseClockIn),
     clockOut: formatTime(baseClockOut),
-    breakStart: formatTime(breakStart),
-    breakEnd: formatTime(breakEnd),
+    breakStart: breakStart ? formatTime(breakStart) : null,
+    breakEnd: breakEnd ? formatTime(breakEnd) : null,
     totalBreakMinutes,
     status: "finished",
     workMinutes,
