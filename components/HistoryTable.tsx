@@ -34,7 +34,7 @@ export function HistoryTable({ records, staffList = [], isAdmin = true }: Histor
     const hourlyWage = staff?.hourlyWage ?? 0;
     const clockOutTime = record.clockOut ? new Date(record.clockOut) : now;
     const grossWorkMinutes = getWorkedMinutes(record, clockOutTime);
-    const { rounded: breakRounded, error: breakError } = roundUpBreakMinutes(record.totalBreakMinutes);
+    const { rounded: breakRounded, error: breakError } = record.totalBreakMinutes === 0 ? { rounded: 0, error: false } : roundUpBreakMinutes(record.totalBreakMinutes);
     const netWorkMinutes = Math.max(0, grossWorkMinutes);
     const overtimeMinutes = getOvertimeMinutes(record, clockOutTime);
     const regularMinutes = Math.max(0, netWorkMinutes - overtimeMinutes);
