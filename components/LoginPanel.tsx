@@ -17,7 +17,6 @@ export function LoginPanel({ pin, message, onPinChange, onLogin }: LoginPanelPro
     <section className="flex justify-center">
       <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-sm sm:p-8">
         <h2 className="text-2xl font-bold text-[#6d4c41]">PINログイン</h2>
-        <p className="mt-2 text-[#8d6e63]">スタッフ別の4桁PINでログインします。</p>
         <div className="mt-6">
           <input
             value={pin}

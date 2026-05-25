@@ -137,7 +137,7 @@ function StaffDetailPanel({ staff, onUpdateStaff }: { staff: Staff; onUpdateStaf
 }
 
 export function AdminPanel({ isAdmin, staffList, records, correctionHistories, selectedMonth, monthlySummary, onMonthChange, onExportCsv, onAddStaff, onUpdateStaff, onUpdateRecord, onCreateRecord }: AdminPanelProps) {
-  const [currentView, setCurrentView] = useState<"menu" | "today" | "staff" | "history" | "correction" | "correctionHistory" | "monthly" | "settings">("menu");
+  const [currentView, setCurrentView] = useState<"menu" | "staff" | "history" | "correction" | "correctionHistory" | "monthly" | "settings">("menu");
   const [historyStaffId, setHistoryStaffId] = useState("all");
   const [historyMonth, setHistoryMonth] = useState(selectedMonth);
   const [showStaffRegistration, setShowStaffRegistration] = useState(false);
@@ -155,7 +155,7 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
     return (
       <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
         <h2 className="text-2xl font-bold">勤務履歴</h2>
-        <HistoryTable records={records} />
+        <HistoryTable records={records} staffList={staffList} />
       </div>
     );
   }
@@ -164,21 +164,12 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
     <div className="space-y-5">
       {currentView === "menu" && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <MenuButton icon="📊" label="本日の勤怠確認" onClick={() => setCurrentView("today")} />
-          <MenuButton icon="👥" label="スタッフ一覧" onClick={() => setCurrentView("staff")} />
+          <MenuButton icon="" label="スタッフ一覧" onClick={() => setCurrentView("staff")} />
           <MenuButton icon="📋" label="勤務履歴一覧" onClick={() => setCurrentView("history")} />
           <MenuButton icon="✏️" label="打刻修正" onClick={() => setCurrentView("correction")} />
           <MenuButton icon="📝" label="修正履歴" onClick={() => setCurrentView("correctionHistory")} />
           <MenuButton icon="📅" label="月次集計" onClick={() => setCurrentView("monthly")} />
           <MenuButton icon="⚙️" label="設定" onClick={() => setCurrentView("settings")} />
-        </div>
-      )}
-
-      {currentView === "today" && (
-        <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
-          <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
-          <h2 className="text-2xl font-bold">本日の勤怠確認</h2>
-          <HistoryTable records={records.filter((r) => r.workDate === new Date().toISOString().split("T")[0])} />
         </div>
       )}
 
@@ -206,7 +197,7 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
           <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
           <h2 className="text-2xl font-bold">勤務履歴一覧</h2>
-          <HistoryTable records={records} />
+          <HistoryTable records={records} staffList={staffList} />
         </div>
       )}
 

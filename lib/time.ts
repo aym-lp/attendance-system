@@ -2,6 +2,12 @@ import type { AttendanceRecord, AttendanceSummary, Staff } from "@/lib/types";
 
 const STANDARD_WORK_MINUTES = 8 * 60;
 
+export function roundUpBreakMinutes(minutes: number): { rounded: number; error: boolean } {
+  if (minutes <= 30) return { rounded: 30, error: false };
+  if (minutes <= 45) return { rounded: 45, error: false };
+  return { rounded: minutes, error: true };
+}
+
 export function getTodayKey(date = new Date()) {
   return new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Asia/Tokyo",
