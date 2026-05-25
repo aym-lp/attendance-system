@@ -52,32 +52,25 @@ function generateAttendanceForDay(staffId: string, staffName: string, date: Date
     baseClockOut.setHours(22 + Math.floor(Math.random() * 2));
   }
 
-  const breakPattern = Math.random();
+  const rawWorkMinutes = (baseClockOut.getTime() - baseClockIn.getTime()) / 1000 / 60;
+  let totalBreakMinutes = 0;
   let breakStart: Date | null = null;
   let breakEnd: Date | null = null;
-  let totalBreakMinutes = 0;
 
-  if (breakPattern < 0.3) {
-    totalBreakMinutes = 30;
-    breakStart = new Date(date);
-    breakStart.setHours(12, 0, 0, 0);
-    breakEnd = new Date(date);
-    breakEnd.setHours(12, 30, 0, 0);
-  } else if (breakPattern < 0.7) {
+  if (rawWorkMinutes >= 7 * 60) {
     totalBreakMinutes = 45;
-    breakStart = new Date(date);
-    breakStart.setHours(12, 0, 0, 0);
-    breakEnd = new Date(date);
-    breakEnd.setHours(12, 45, 0, 0);
-  } else {
-    totalBreakMinutes = 60;
-    breakStart = new Date(date);
-    breakStart.setHours(12, 0, 0, 0);
-    breakEnd = new Date(date);
-    breakEnd.setHours(13, 0, 0, 0);
+  } else if (rawWorkMinutes >= 6.5 * 60) {
+    totalBreakMinutes = 30;
   }
 
-  const workMinutes = (baseClockOut.getTime() - baseClockIn.getTime()) / 1000 / 60 - totalBreakMinutes;
+  if (totalBreakMinutes > 0) {
+    breakStart = new Date(date);
+    breakStart.setHours(12, 0, 0, 0);
+    breakEnd = new Date(date);
+    breakEnd.setHours(12, Math.floor(totalBreakMinutes), 0, 0);
+  }
+
+  const workMinutes = Math.max(0, rawWorkMinutes - totalBreakMinutes);
 
   return {
     id: crypto.randomUUID(),
@@ -96,6 +89,68 @@ function generateAttendanceForDay(staffId: string, staffName: string, date: Date
   };
 }
 
+function createSpecificRecord(staffId: string, staffName: string, dateStr: string, clockInStr: string, clockOutStr: string, breakMinutes: number): AttendanceRecord {
+  const date = new Date(dateStr + "T00:00:00");
+  const [inHour, inMin] = clockInStr.split(":").map(Number);
+  const [outHour, outMin] = clockOutStr.split(":").map(Number);
+
+  const clockIn = new Date(date);
+  clockIn.setHours(inHour, inMin, 0, 0);
+
+  const clockOut = new Date(date);
+  clockOut.setHours(outHour, outMin, 0, 0);
+
+  const rawMinutes = (clockOut.getTime() - clockIn.getTime()) / 1000 / 60;
+  const workMinutes = Math.max(0, rawMinutes - breakMinutes);
+
+  let breakStart: string | null = null;
+  let breakEnd: string | null = null;
+
+  if (breakMinutes > 0) {
+    const bs = new Date(date);
+    bs.setHours(12, 0, 0, 0);
+    breakStart = formatTime(bs);
+    const be = new Date(date);
+    be.setHours(12, breakMinutes, 0, 0);
+    breakEnd = formatTime(be);
+  }
+
+  return {
+    id: crypto.randomUUID(),
+    staffId,
+    staffName,
+    workDate: dateStr,
+    clockIn: formatTime(clockIn),
+    clockOut: formatTime(clockOut),
+    breakStart,
+    breakEnd,
+    totalBreakMinutes: breakMinutes,
+    status: "finished",
+    workMinutes,
+    overtimeMinutes: workMinutes > 8 * 60 ? Math.floor(workMinutes - 8 * 60) : 0,
+    nightMinutes: 0,
+  };
+}
+
+function generateOnobayashiRecords(staffId: string, staffName: string): AttendanceRecord[] {
+  const data: [string, string, string, number][] = [
+    ["2026-05-01", "12:00", "18:00", 30],
+    ["2026-05-02", "09:00", "18:00", 45],
+    ["2026-05-03", "08:30", "13:30", 0],
+    ["2026-05-05", "08:30", "17:00", 45],
+    ["2026-05-06", "12:00", "18:00", 30],
+    ["2026-05-08", "12:00", "18:00", 30],
+    ["2026-05-09", "09:00", "18:00", 45],
+    ["2026-05-10", "08:30", "18:00", 45],
+    ["2026-05-11", "09:00", "18:00", 45],
+    ["2026-05-12", "08:30", "18:00", 45],
+    ["2026-05-14", "08:30", "18:00", 45],
+    ["2026-05-15", "11:00", "18:00", 45],
+  ];
+
+  return data.map(([date, cin, cout, brk]) => createSpecificRecord(staffId, staffName, date, cin, cout, brk));
+}
+
 export function generateSeedAttendanceRecords(staffList: Staff[]): AttendanceRecord[] {
   const records: AttendanceRecord[] = [];
   const today = new Date();
@@ -103,12 +158,25 @@ export function generateSeedAttendanceRecords(staffList: Staff[]): AttendanceRec
   const twoMonthsAgo = new Date(today);
   twoMonthsAgo.setMonth(today.getMonth() - 2);
 
+  // 小野林茜の特定デモデータ
+  const onobayashi = staffList.find((s) => s.id === "STF-003");
+  const onobayashiSpecificDates = new Set(["2026-05-01", "2026-05-02", "2026-05-03", "2026-05-05", "2026-05-06", "2026-05-08", "2026-05-09", "2026-05-10", "2026-05-11", "2026-05-12", "2026-05-14", "2026-05-15"]);
+
+  if (onobayashi) {
+    records.push(...generateOnobayashiRecords(onobayashi.id, onobayashi.name));
+  }
+
   for (const staff of staffList) {
     const currentDate = new Date(twoMonthsAgo);
     while (currentDate <= today) {
       const dateString = currentDate.toISOString().split("T")[0];
-      // 田中太郎（店長）の本日のレコードは生成しない
+      // 細田径弘（店長）の本日のレコードは生成しない
       if (staff.id === "STF-001" && dateString === todayString) {
+        currentDate.setDate(currentDate.getDate() + 1);
+        continue;
+      }
+      // 小野林茜の特定日付はスキップ（既に手動生成済み）
+      if (staff.id === "STF-003" && onobayashiSpecificDates.has(dateString)) {
         currentDate.setDate(currentDate.getDate() + 1);
         continue;
       }

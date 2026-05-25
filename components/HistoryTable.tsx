@@ -7,9 +7,10 @@ import { formatDateTime, formatMinutes, formatCurrency, getOvertimeMinutes, getW
 type HistoryTableProps = {
   records: AttendanceRecord[];
   staffList?: Staff[];
+  isAdmin?: boolean;
 };
 
-export function HistoryTable({ records, staffList = [] }: HistoryTableProps) {
+export function HistoryTable({ records, staffList = [], isAdmin = true }: HistoryTableProps) {
   const now = useMemo(() => new Date(), []);
   const [filterStaffId, setFilterStaffId] = useState("all");
   const [filterMonth, setFilterMonth] = useState("");
@@ -50,16 +51,18 @@ export function HistoryTable({ records, staffList = [] }: HistoryTableProps) {
   return (
     <div className="mt-4">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
-        <select
-          value={filterStaffId}
-          onChange={(e) => setFilterStaffId(e.target.value)}
-          className="h-12 rounded-2xl border border-[#d7ccc8] bg-white px-4 text-sm text-[#3e2723] outline-none focus:border-[#6d4c41]"
-        >
-          <option value="all">全スタッフ</option>
-          {staffList.map((staff) => (
-            <option key={staff.id} value={staff.id}>{staff.name}</option>
-          ))}
-        </select>
+        {isAdmin && (
+          <select
+            value={filterStaffId}
+            onChange={(e) => setFilterStaffId(e.target.value)}
+            className="h-12 rounded-2xl border border-[#d7ccc8] bg-white px-4 text-sm text-[#3e2723] outline-none focus:border-[#6d4c41]"
+          >
+            <option value="all">全スタッフ</option>
+            {staffList.map((staff) => (
+              <option key={staff.id} value={staff.id}>{staff.name}</option>
+            ))}
+          </select>
+        )}
         <select
           value={filterMonth}
           onChange={(e) => setFilterMonth(e.target.value)}
@@ -72,7 +75,7 @@ export function HistoryTable({ records, staffList = [] }: HistoryTableProps) {
         </select>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[960px] text-left text-sm">
+        <table className={`w-full text-left text-sm ${isAdmin ? "min-w-[960px]" : "min-w-[480px]"}`}>
           <thead className="bg-[#d7ccc8] text-[#3e2723]">
             <tr>
               <th className="px-4 py-3">日付</th>
@@ -80,11 +83,15 @@ export function HistoryTable({ records, staffList = [] }: HistoryTableProps) {
               <th className="px-4 py-3">出勤</th>
               <th className="px-4 py-3">退勤</th>
               <th className="px-4 py-3">休憩時間</th>
-              <th className="px-4 py-3">実働時間</th>
-              <th className="px-4 py-3">残業時間</th>
-              <th className="px-4 py-3">通常給与</th>
-              <th className="px-4 py-3">残業給与</th>
-              <th className="px-4 py-3">日給合計</th>
+              {isAdmin && (
+                <>
+                  <th className="px-4 py-3">実働時間</th>
+                  <th className="px-4 py-3">残業時間</th>
+                  <th className="px-4 py-3">通常給与</th>
+                  <th className="px-4 py-3">残業給与</th>
+                  <th className="px-4 py-3">日給合計</th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -103,17 +110,21 @@ export function HistoryTable({ records, staffList = [] }: HistoryTableProps) {
                       formatMinutes(pay.breakRounded)
                     )}
                   </td>
-                  <td className="px-4 py-3">{formatMinutes(pay.netWorkMinutes)}</td>
-                  <td className="px-4 py-3">{formatMinutes(pay.overtimeMinutes)}</td>
-                  <td className="px-4 py-3">{formatCurrency(pay.regularPay)}</td>
-                  <td className="px-4 py-3">{formatCurrency(pay.overtimePay)}</td>
-                  <td className="px-4 py-3 font-bold">{formatCurrency(pay.totalPay)}</td>
+                  {isAdmin && (
+                    <>
+                      <td className="px-4 py-3">{formatMinutes(pay.netWorkMinutes)}</td>
+                      <td className="px-4 py-3">{formatMinutes(pay.overtimeMinutes)}</td>
+                      <td className="px-4 py-3">{formatCurrency(pay.regularPay)}</td>
+                      <td className="px-4 py-3">{formatCurrency(pay.overtimePay)}</td>
+                      <td className="px-4 py-3 font-bold">{formatCurrency(pay.totalPay)}</td>
+                    </>
+                  )}
                 </tr>
               );
             })}
             {sortedAndFilteredRecords.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-4 py-8 text-center text-[#8d6e63]">該当する勤務履歴はありません。</td>
+                <td colSpan={isAdmin ? 10 : 5} className="px-4 py-8 text-center text-[#8d6e63]">該当する勤務履歴はありません。</td>
               </tr>
             )}
           </tbody>

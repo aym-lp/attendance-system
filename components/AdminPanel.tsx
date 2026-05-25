@@ -155,7 +155,7 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
     return (
       <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
         <h2 className="text-2xl font-bold">勤務履歴</h2>
-        <HistoryTable records={records} staffList={staffList} />
+        <HistoryTable records={records} staffList={staffList} isAdmin={isAdmin} />
       </div>
     );
   }
@@ -164,11 +164,18 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
     <div className="space-y-5">
       {currentView === "menu" && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <MenuButton label="スタッフ一覧" onClick={() => setCurrentView("staff")} />
-          <MenuButton label="勤務履歴一覧" onClick={() => setCurrentView("history")} />
-          <MenuButton label="打刻修正" onClick={() => setCurrentView("correction")} />
-          <MenuButton label="修正履歴" onClick={() => setCurrentView("correctionHistory")} />
-          <MenuButton label="月次集計" onClick={() => setCurrentView("monthly")} />
+          {isAdmin && (
+            <>
+              <MenuButton label="スタッフ一覧" onClick={() => setCurrentView("staff")} />
+              <MenuButton label="勤務履歴一覧" onClick={() => setCurrentView("history")} />
+              <MenuButton label="打刻修正" onClick={() => setCurrentView("correction")} />
+              <MenuButton label="修正履歴" onClick={() => setCurrentView("correctionHistory")} />
+              <MenuButton label="月次集計" onClick={() => setCurrentView("monthly")} />
+            </>
+          )}
+          {!isAdmin && (
+            <MenuButton label="勤務履歴一覧" onClick={() => setCurrentView("history")} />
+          )}
         </div>
       )}
 
@@ -196,7 +203,7 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
           <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
           <h2 className="text-2xl font-bold">勤務履歴一覧</h2>
-          <HistoryTable records={records} staffList={staffList} />
+          <HistoryTable records={records} staffList={staffList} isAdmin={isAdmin} />
         </div>
       )}
 
