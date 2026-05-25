@@ -412,14 +412,30 @@ function AttendanceCorrectionPanel({ staffList, records, onUpdateRecord, onCreat
   const staffRecords = selectedStaffId && selectedDate ? records.filter((r) => r.staffId === selectedStaffId && r.workDate === selectedDate) : [];
   const targetRecord = staffRecords.find((r) => r.id === selectedRecordId) ?? staffRecords[0];
 
+  const toTimeValue = (timeStr: string | null): string => {
+    if (!timeStr) return "";
+    if (timeStr.includes("T")) {
+      const d = new Date(timeStr);
+      const h = String(d.getHours()).padStart(2, "0");
+      const m = String(d.getMinutes()).padStart(2, "0");
+      return `${h}:${m}`;
+    }
+    return timeStr;
+  };
+
+  const toDateTimeValue = (date: string, time: string): string | null => {
+    if (!date || !time) return null;
+    return fromDateTimeInputValue(`${date}T${time}`);
+  };
+
   const loadRecord = (recordId: string) => {
     setSelectedRecordId(recordId);
     const record = staffRecords.find((item) => item.id === recordId);
     setValues({
-      clockIn: toDateTimeInputValue(record?.clockIn ?? null),
-      clockOut: toDateTimeInputValue(record?.clockOut ?? null),
-      breakStart: toDateTimeInputValue(record?.breakStart ?? null),
-      breakEnd: toDateTimeInputValue(record?.breakEnd ?? null),
+      clockIn: toTimeValue(record?.clockIn ?? null),
+      clockOut: toTimeValue(record?.clockOut ?? null),
+      breakStart: toTimeValue(record?.breakStart ?? null),
+      breakEnd: toTimeValue(record?.breakEnd ?? null),
     });
   };
 
@@ -432,10 +448,10 @@ function AttendanceCorrectionPanel({ staffList, records, onUpdateRecord, onCreat
         staffId: staff.id,
         staffName: staff.name,
         workDate: selectedDate,
-        clockIn: fromDateTimeInputValue(values.clockIn),
-        clockOut: fromDateTimeInputValue(values.clockOut),
-        breakStart: fromDateTimeInputValue(values.breakStart),
-        breakEnd: fromDateTimeInputValue(values.breakEnd),
+        clockIn: toDateTimeValue(selectedDate, values.clockIn),
+        clockOut: toDateTimeValue(selectedDate, values.clockOut),
+        breakStart: toDateTimeValue(selectedDate, values.breakStart),
+        breakEnd: toDateTimeValue(selectedDate, values.breakEnd),
         totalBreakMinutes: 0,
         status: "finished" as const,
       };
@@ -446,10 +462,10 @@ function AttendanceCorrectionPanel({ staffList, records, onUpdateRecord, onCreat
     }
     if (!targetRecord) return;
     onUpdateRecord(targetRecord.id, {
-      clockIn: fromDateTimeInputValue(values.clockIn),
-      clockOut: fromDateTimeInputValue(values.clockOut),
-      breakStart: fromDateTimeInputValue(values.breakStart),
-      breakEnd: fromDateTimeInputValue(values.breakEnd),
+      clockIn: toDateTimeValue(targetRecord.workDate, values.clockIn),
+      clockOut: toDateTimeValue(targetRecord.workDate, values.clockOut),
+      breakStart: toDateTimeValue(targetRecord.workDate, values.breakStart),
+      breakEnd: toDateTimeValue(targetRecord.workDate, values.breakEnd),
     });
     setSelectedRecordId("");
     setSelectedField(null);
@@ -479,10 +495,10 @@ function AttendanceCorrectionPanel({ staffList, records, onUpdateRecord, onCreat
                 <p className="font-bold">勤務履歴がありません</p>
                 <p className="mt-2 text-sm text-slate-500">出勤・退勤・休憩時間を入力してください</p>
                 <div className="mt-4 space-y-3">
-                  <DateTimeInput label="出勤時間" value={values.clockIn} onChange={(value) => setValues((prev) => ({ ...prev, clockIn: value }))} />
-                  <DateTimeInput label="退勤時間" value={values.clockOut} onChange={(value) => setValues((prev) => ({ ...prev, clockOut: value }))} />
-                  <DateTimeInput label="休憩開始" value={values.breakStart} onChange={(value) => setValues((prev) => ({ ...prev, breakStart: value }))} />
-                  <DateTimeInput label="休憩終了" value={values.breakEnd} onChange={(value) => setValues((prev) => ({ ...prev, breakEnd: value }))} />
+                  <TimeInput label="出勤時間" value={values.clockIn} onChange={(value) => setValues((prev) => ({ ...prev, clockIn: value }))} />
+                  <TimeInput label="退勤時間" value={values.clockOut} onChange={(value) => setValues((prev) => ({ ...prev, clockOut: value }))} />
+                  <TimeInput label="休憩開始" value={values.breakStart} onChange={(value) => setValues((prev) => ({ ...prev, breakStart: value }))} />
+                  <TimeInput label="休憩終了" value={values.breakEnd} onChange={(value) => setValues((prev) => ({ ...prev, breakEnd: value }))} />
                 </div>
                 <button onClick={submit} className="mt-4 min-h-14 w-full rounded-2xl bg-[#8d6e63] px-6 font-bold text-white">打刻を修正</button>
               </div>
@@ -523,7 +539,7 @@ function AttendanceCorrectionPanel({ staffList, records, onUpdateRecord, onCreat
                 {selectedField && (
                   <div className="mt-4">
                     <p className="mb-2 text-sm font-semibold">修正時刻を選択</p>
-                    <DateTimeInput label="" value={values[selectedField]} onChange={(value) => setValues((prev) => ({ ...prev, [selectedField]: value }))} />
+                    <TimeInput label="" value={values[selectedField]} onChange={(value) => setValues((prev) => ({ ...prev, [selectedField]: value }))} />
                   </div>
                 )}
                 {selectedField && (
@@ -571,6 +587,81 @@ function Input({ label, value, onChange, inputMode }: { label: string; value: st
 
 function DateTimeInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return <label className="text-sm font-semibold">{label}<input type="datetime-local" value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-950" /></label>;
+}
+
+function TimeInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  const [inputValue, setInputValue] = useState(value ? value.replace(":", ":") : "");
+
+  useEffect(() => {
+    setInputValue(value ? value.replace(":", ":") : "");
+  }, [value]);
+
+  const handleChange = (text: string) => {
+    const digits = text.replace(/\D/g, "");
+    let formatted = "";
+    if (digits.length >= 4) {
+      formatted = `${digits.slice(0, 2)}:${digits.slice(2, 4)}`;
+    } else if (digits.length >= 2) {
+      formatted = `${digits.slice(0, 2)}${digits.length > 2 ? ":" + digits.slice(2) : ""}`;
+    } else {
+      formatted = digits;
+    }
+    setInputValue(formatted);
+    if (digits.length >= 4) {
+      const h = digits.slice(0, 2);
+      const m = digits.slice(2, 4);
+      const hh = Math.min(23, Number(h));
+      const mm = Math.min(59, Number(m));
+      onChange(`${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`);
+    } else if (digits.length < 2) {
+      onChange("");
+    }
+  };
+
+  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+  const minutes = ["00", "15", "30", "45"];
+
+  return (
+    <label className="flex flex-col gap-1 text-sm font-semibold">
+      {label}
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => handleChange(e.target.value)}
+        placeholder="HH:MM"
+        inputMode="numeric"
+        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-[#6d4c41] dark:border-slate-700 dark:bg-slate-950"
+      />
+      <div className="flex gap-2">
+        <select
+          value={value ? value.slice(0, 2) : ""}
+          onChange={(e) => {
+            const m = value ? value.slice(3, 5) : "00";
+            onChange(`${e.target.value}:${m}`);
+          }}
+          className="h-10 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-950"
+        >
+          <option value="">時</option>
+          {hours.map((h) => (
+            <option key={h} value={h}>{h}</option>
+          ))}
+        </select>
+        <select
+          value={value ? value.slice(3, 5) : ""}
+          onChange={(e) => {
+            const h = value ? value.slice(0, 2) : "00";
+            onChange(`${h}:${e.target.value}`);
+          }}
+          className="h-10 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-950"
+        >
+          <option value="">分</option>
+          {minutes.map((m) => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+        </select>
+      </div>
+    </label>
+  );
 }
 
 function DatePickerInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
