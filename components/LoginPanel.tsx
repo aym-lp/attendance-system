@@ -26,19 +26,22 @@ export function LoginPanel({ pin, message, onPinChange, onLogin }: LoginPanelPro
         <h2 className="text-center text-2xl font-bold text-[#6d4c41]">勤怠管理ログイン</h2>
         <div className="relative mt-6 flex justify-center gap-3" onClick={focusInput}>
           {[0, 1, 2, 3].map((index) => (
-            <div
-              key={index}
-              className={`flex h-14 w-14 select-none items-center justify-center rounded-2xl border-2 text-2xl font-bold transition-colors ${
-                index < digits.length
-                  ? "border-[#6d4c41] bg-[#faf8f5] text-[#3e2723]"
-                  : "border-[#d7ccc8] bg-white text-[#d7ccc8]"
-              }`}
-            >
-              {digits[index] ? "●" : "-"}
+            <div key={index} className="relative h-14 w-14">
+              <img
+                src="/pin-img.png"
+                alt=""
+                className="h-full w-full rounded-2xl object-cover"
+              />
+              <div className="absolute inset-0 flex items-center justify-center rounded-2xl">
+                <span className={`text-2xl font-bold ${digits[index] ? "text-[#3e2723]" : "text-[#d7ccc8]"}`}>
+                  {digits[index] ? "●" : "-"}
+                </span>
+              </div>
             </div>
           ))}
           <input
             ref={inputRef}
+            type="text"
             value={pin}
             onChange={(event) => handlePinChange(event.target.value)}
             onKeyDown={(event) => {
@@ -49,6 +52,8 @@ export function LoginPanel({ pin, message, onPinChange, onLogin }: LoginPanelPro
             }}
             inputMode="numeric"
             autoComplete="one-time-code"
+            autoFocus
+            tabIndex={0}
             className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
             maxLength={4}
           />
