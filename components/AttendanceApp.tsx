@@ -137,6 +137,7 @@ export function AttendanceApp() {
         const fields: CorrectionField[] = ["clockIn", "clockOut", "breakStart", "breakEnd"];
         const histories: CorrectionHistory[] = fields
           .filter((field) => record[field] !== values[field])
+          .filter((field) => values[field] !== null && values[field] !== undefined && values[field] !== "")
           .map((field) => ({
             id: crypto.randomUUID(),
             recordId: record.id,
@@ -204,6 +205,7 @@ export function AttendanceApp() {
             />
             <AdminPanel
               isAdmin={currentStaff.role === "admin" || currentStaff.role === "manager"}
+              currentStaff={currentStaff}
               staffList={staffList}
               records={displayRecords}
               correctionHistories={correctionHistories}

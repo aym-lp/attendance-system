@@ -15,6 +15,7 @@ const correctionFieldLabel: Record<CorrectionField, string> = {
 
 type AdminPanelProps = {
   isAdmin: boolean;
+  currentStaff: Staff;
   staffList: Staff[];
   records: AttendanceRecord[];
   correctionHistories: CorrectionHistory[];
@@ -133,14 +134,14 @@ function StaffDetailPanel({ staff, onUpdateStaff }: { staff: Staff; onUpdateStaf
               <p className="font-bold">{staff.memo}</p>
             </div>
           )}
-          <button onClick={() => setIsEditing(true)} className="min-h-12 w-full rounded-2xl bg-amber-500 px-6 font-bold text-white">編集</button>
+          <button onClick={() => setIsEditing(true)} className="min-h-12 w-full rounded-2xl bg-[#6d4c41] px-6 font-bold text-white">編集</button>
         </div>
       )}
     </div>
   );
 }
 
-export function AdminPanel({ isAdmin, staffList, records, correctionHistories, selectedMonth, monthlySummary, allowances, onMonthChange, onExportCsv, onAddStaff, onUpdateStaff, onUpdateRecord, onCreateRecord, onAddAllowance, onDeleteAllowance }: AdminPanelProps) {
+export function AdminPanel({ isAdmin, currentStaff, staffList, records, correctionHistories, selectedMonth, monthlySummary, allowances, onMonthChange, onExportCsv, onAddStaff, onUpdateStaff, onUpdateRecord, onCreateRecord, onAddAllowance, onDeleteAllowance }: AdminPanelProps) {
   const [currentView, setCurrentView] = useState<"menu" | "staff" | "history" | "correction" | "correctionHistory" | "monthly" | "allowance">("menu");
   const [historyStaffId, setHistoryStaffId] = useState("all");
   const [historyMonth, setHistoryMonth] = useState(selectedMonth);
@@ -156,10 +157,27 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
   }, [correctionHistories, historyMonth, historyStaffId]);
 
   if (!isAdmin) {
+    const myHistories = correctionHistories.filter((h) => h.staffId === currentStaff.id);
     return (
-      <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
-        <h2 className="text-2xl font-bold">勤務履歴</h2>
-        <HistoryTable records={records} staffList={staffList} isAdmin={isAdmin} allowances={allowances} />
+      <div className="space-y-5">
+        <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
+          <h2 className="text-2xl font-bold">勤務履歴</h2>
+          <HistoryTable records={records} staffList={staffList} isAdmin={isAdmin} allowances={allowances} />
+        </div>
+        <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
+          <h2 className="text-2xl font-bold">打刻修正</h2>
+          <AttendanceCorrectionPanel
+            staffList={staffList}
+            records={records}
+            currentStaffId={currentStaff.id}
+            onUpdateRecord={onUpdateRecord}
+            onCreateRecord={onCreateRecord}
+          />
+        </div>
+        <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
+          <h2 className="text-2xl font-bold">修正履歴</h2>
+          <CorrectionHistoryTable histories={myHistories} />
+        </div>
       </div>
     );
   }
@@ -228,6 +246,7 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
       {currentView === "correction" && (
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
           <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
+          <h2 className="text-2xl font-bold">打刻修正</h2>
           <AttendanceCorrectionPanel staffList={staffList} records={records} onUpdateRecord={onUpdateRecord} onCreateRecord={onCreateRecord} />
         </div>
       )}
@@ -259,9 +278,11 @@ export function AdminPanel({ isAdmin, staffList, records, correctionHistories, s
             <div>
               <p className="text-sm font-semibold text-[#6d4c41]">給与設定</p>
               <h2 className="text-2xl font-bold">月次集計</h2>
-              <p className="mt-1 text-sm text-slate-500">月末締め固定 / 支払日25日固定 / 全スタッフ共通</p>
             </div>
-            <input type="month" value={selectedMonth} onChange={(event) => onMonthChange(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-semibold dark:border-slate-700 dark:bg-slate-950" />
+            <div className="flex items-center gap-2">
+              <input type="month" value={selectedMonth} onChange={(event) => onMonthChange(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-semibold dark:border-slate-700 dark:bg-slate-950" />
+              <span className="text-2xl text-[#6d4c41]">↕</span>
+            </div>
           </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-3">
             {monthlySummary.map((summary) => (
@@ -402,8 +423,9 @@ function StaffRegistrationPanel({ onAddStaff, onClose }: { onAddStaff: AdminPane
   );
 }
 
-function AttendanceCorrectionPanel({ staffList, records, onUpdateRecord, onCreateRecord }: { staffList: Staff[]; records: AttendanceRecord[]; onUpdateRecord: AdminPanelProps["onUpdateRecord"]; onCreateRecord: AdminPanelProps["onCreateRecord"] }) {
-  const [selectedStaffId, setSelectedStaffId] = useState("");
+function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdateRecord, onCreateRecord }: { staffList: Staff[]; records: AttendanceRecord[]; currentStaffId?: string; onUpdateRecord: AdminPanelProps["onUpdateRecord"]; onCreateRecord: AdminPanelProps["onCreateRecord"] }) {
+  const isSelfMode = !!currentStaffId;
+  const [selectedStaffId, setSelectedStaffId] = useState(isSelfMode ? currentStaffId : "");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedRecordId, setSelectedRecordId] = useState("");
   const [selectedField, setSelectedField] = useState<CorrectionField | null>(null);
@@ -473,15 +495,16 @@ function AttendanceCorrectionPanel({ staffList, records, onUpdateRecord, onCreat
 
   return (
     <section className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
-      <h2 className="text-2xl font-bold">打刻修正</h2>
       <div className="mt-4 space-y-4">
-        <div>
-          <p className="mb-2 text-sm font-semibold">スタッフを選択</p>
-          <select value={selectedStaffId} onChange={(event) => setSelectedStaffId(event.target.value)} className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-950">
-            <option value="">スタッフを選択</option>
-            {staffList.map((staff) => <option key={staff.id} value={staff.id}>{staff.name}</option>)}
-          </select>
-        </div>
+        {!isSelfMode && (
+          <div>
+            <p className="mb-2 text-sm font-semibold">スタッフを選択</p>
+            <select value={selectedStaffId} onChange={(event) => setSelectedStaffId(event.target.value)} className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-950">
+              <option value="">スタッフを選択</option>
+              {staffList.map((staff) => <option key={staff.id} value={staff.id}>{staff.name}</option>)}
+            </select>
+          </div>
+        )}
         {selectedStaffId && (
           <div>
             <p className="mb-2 text-sm font-semibold">日付を選択</p>
