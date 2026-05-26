@@ -45,7 +45,7 @@ export function AttendanceApp() {
 
     setCurrentStaff(staff);
     setPin("");
-    setMessage(`${staff.name}さん、ようこそ`);
+    setMessage("");
   };
 
   const logout = () => {
@@ -191,9 +191,6 @@ export function AttendanceApp() {
           <LoginPanel pin={pin} message={message} onPinChange={setPin} onLogin={login} />
         ) : (
           <section className="flex flex-col gap-5">
-            <div className="rounded-3xl bg-[#d7ccc8] p-4 text-sm font-semibold text-[#3e2723]">
-              ログイン成功：{currentStaff.name}
-            </div>
             <AttendanceCard
               staff={currentStaff}
               record={currentRecord}

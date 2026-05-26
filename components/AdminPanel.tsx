@@ -295,7 +295,11 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
             </select>
           </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-3">
-            {monthlySummary.map((summary) => (
+            {[...monthlySummary].sort((a, b) => {
+              const indexA = staffList.findIndex((s) => s.id === a.staffId);
+              const indexB = staffList.findIndex((s) => s.id === b.staffId);
+              return indexA - indexB;
+            }).map((summary) => (
               <button key={summary.staffId} onClick={() => setSelectedSummary(summary)} className="rounded-2xl border border-slate-200 p-4 text-left hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">
                 <p className="font-bold">{summary.staffName}</p>
                 <p className="mt-1 text-sm text-slate-500">合計支給額：{formatCurrency(summary.totalPay)}</p>
