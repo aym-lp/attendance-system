@@ -284,18 +284,15 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
               <p className="text-sm font-semibold text-[#6d4c41]">給与設定</p>
               <h2 className="text-2xl font-bold">月次集計</h2>
             </div>
-            <div className="relative">
-              <select
-                value={selectedMonth}
-                onChange={(event) => onMonthChange(event.target.value)}
-                className="h-12 appearance-none rounded-2xl border border-slate-200 bg-white px-4 pr-10 text-sm font-semibold outline-none focus:border-[#6d4c41] dark:border-slate-700 dark:bg-slate-950"
-              >
-                {uniqueMonths.map((month) => (
-                  <option key={month} value={month}>{month}</option>
-                ))}
-              </select>
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xl text-[#6d4c41]">↕</span>
-            </div>
+            <select
+              value={selectedMonth}
+              onChange={(event) => onMonthChange(event.target.value)}
+              className="h-12 rounded-2xl border border-[#d7ccc8] bg-white px-4 text-sm font-semibold text-[#3e2723] outline-none focus:border-[#6d4c41] dark:border-slate-700 dark:bg-slate-950"
+            >
+              {uniqueMonths.map((month) => (
+                <option key={month} value={month}>{month}</option>
+              ))}
+            </select>
           </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-3">
             {monthlySummary.map((summary) => (
