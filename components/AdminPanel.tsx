@@ -149,6 +149,11 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [selectedSummary, setSelectedSummary] = useState<AttendanceSummary | null>(null);
 
+  const uniqueMonths = useMemo(() => {
+    const months = new Set(records.map((r) => r.workDate.slice(0, 7)));
+    return Array.from(months).sort().reverse();
+  }, [records]);
+
   const filteredHistories = useMemo(() => {
     return correctionHistories
       .filter((history) => historyStaffId === "all" || history.staffId === historyStaffId)
@@ -279,9 +284,17 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
               <p className="text-sm font-semibold text-[#6d4c41]">給与設定</p>
               <h2 className="text-2xl font-bold">月次集計</h2>
             </div>
-            <div className="flex items-center gap-2">
-              <input type="month" value={selectedMonth} onChange={(event) => onMonthChange(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 font-semibold dark:border-slate-700 dark:bg-slate-950" />
-              <span className="text-2xl text-[#6d4c41]">↕</span>
+            <div className="relative">
+              <select
+                value={selectedMonth}
+                onChange={(event) => onMonthChange(event.target.value)}
+                className="h-12 appearance-none rounded-2xl border border-slate-200 bg-white px-4 pr-10 text-sm font-semibold outline-none focus:border-[#6d4c41] dark:border-slate-700 dark:bg-slate-950"
+              >
+                {uniqueMonths.map((month) => (
+                  <option key={month} value={month}>{month}</option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xl text-[#6d4c41]">↕</span>
             </div>
           </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-3">
@@ -619,7 +632,8 @@ function TimeInput({ label, value, onChange }: { label: string; value: string; o
   }, [value]);
 
   const handleChange = (text: string) => {
-    const digits = text.replace(/\D/g, "");
+    const normalized = text.replace(/[０-９]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0));
+    const digits = normalized.replace(/\D/g, "");
     let formatted = "";
     if (digits.length >= 4) {
       formatted = `${digits.slice(0, 2)}:${digits.slice(2, 4)}`;
@@ -635,8 +649,6 @@ function TimeInput({ label, value, onChange }: { label: string; value: string; o
       const hh = Math.min(23, Number(h));
       const mm = Math.min(59, Number(m));
       onChange(`${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`);
-    } else if (digits.length < 2) {
-      onChange("");
     }
   };
 
