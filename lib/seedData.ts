@@ -1,6 +1,7 @@
 import type { Staff, AttendanceRecord, CorrectionHistory, AttendanceSummary, StaffRole } from "@/lib/types";
 
 const staffNames = [
+  { name: "細田 径弘", kana: "ホソダ ミチヒロ", role: "manager" as StaffRole, hourlyWage: 0, transportationAllowance: 0 },
   { name: "和島 亜純", kana: "ワジマ アジュン", role: "staff" as StaffRole, hourlyWage: 1310, transportationAllowance: 0 },
   { name: "小野林 茜", kana: "オノバヤシ アカネ", role: "staff" as StaffRole, hourlyWage: 1207, transportationAllowance: 0 },
   { name: "樋口 凛", kana: "ヒグチ リン", role: "staff" as StaffRole, hourlyWage: 1177, transportationAllowance: 0 },
@@ -12,11 +13,11 @@ export function generateSeedStaff(): Staff[] {
     id: `STF-${(index + 1).toString().padStart(3, "0")}`,
     name: staff.name,
     kana: staff.kana,
-    pin: ["1111", "2222", "3333", "4444"][index],
+    pin: ["9999", "1111", "2222", "3333", "4444"][index],
     role: staff.role,
     hourlyWage: staff.hourlyWage,
     transportationAllowance: staff.transportationAllowance,
-    memo: "",
+    memo: index === 0 ? "管理者" : "",
     isActive: true,
   }));
 }
@@ -214,5 +215,19 @@ export function generateSeedData() {
   const histories = generateSeedCorrectionHistories();
   const summaries = generateSeedMonthlySummary(staff, records);
 
-  return { staff, records, histories, summaries, allowances: [] };
+  const wajima = staff.find((s) => s.name === "和島 亜純");
+
+  const allowances = wajima ? [
+    {
+      id: crypto.randomUUID(),
+      name: "正月手当",
+      startDate: "2026-01-02",
+      endDate: "2026-01-03",
+      staffId: wajima.id,
+      staffName: wajima.name,
+      hourlyAddition: 500,
+    },
+  ] : [];
+
+  return { staff, records, histories, summaries, allowances };
 }
