@@ -5,6 +5,7 @@ import type { Allowance, AttendanceRecord, AttendanceSummary, CorrectionField, C
 import { formatCurrency, formatDateTime, formatMinutes, fromDateTimeInputValue, toDateTimeInputValue } from "@/lib/time";
 import { HistoryTable } from "@/components/HistoryTable";
 import { AllowancePanel } from "@/components/AllowancePanel";
+import { SpreadsheetSyncPanel } from "@/components/SpreadsheetSyncPanel";
 
 const correctionFieldLabel: Record<CorrectionField, string> = {
   clockIn: "出勤時間",
@@ -307,6 +308,9 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
             ))}
             {monthlySummary.length === 0 && <p className="text-sm text-slate-500">対象月の勤務データはまだありません。</p>}
           </div>
+          {monthlySummary.length > 0 && (
+            <SpreadsheetSyncPanel month={selectedMonth} summaries={monthlySummary} />
+          )}
         </div>
       )}
 
