@@ -187,13 +187,7 @@ export function AttendanceApp() {
     <main className="min-h-screen bg-[#faf8f5] text-[#3e2723]">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
         {!currentStaff ? (
-          <div className="flex flex-col items-center gap-6">
-            <div className="flex items-center gap-4">
-              <img src="/OGAWA-logo.png" alt="OGAWA" className="h-16 w-auto object-contain" />
-              <img src="/coffee-logo.png" alt="Coffee" className="h-16 w-auto object-contain" />
-            </div>
-            <LoginPanel pin={pin} message={message} onPinChange={setPin} onLogin={login} />
-          </div>
+          <LoginPanel pin={pin} message={message} onPinChange={setPin} onLogin={login} />
         ) : (
           <section className="flex flex-col gap-5">
             <div className="rounded-3xl bg-[#d7ccc8] p-4 text-sm font-semibold text-[#3e2723]">
