@@ -192,23 +192,47 @@ export function buildMonthlySummary(records: AttendanceRecord[], month: string, 
   return Array.from(summaries.values());
 }
 
-export function recordsToCsv(records: AttendanceRecord[]) {
-  const header = ["日付", "スタッフ", "出勤", "退勤", "休憩時間", "勤務時間", "残業時間", "状態"];
+export function recordsToCsv(records: AttendanceRecord[], staffList: Staff[], allowances: Allowance[]) {
+  const header = ["日付", "スタッフ", "出勤", "退勤", "休憩時間", "勤務時間", "残業時間", "通常給与", "残業給与", "日給"];
+  let totalRegularPay = 0;
+  let totalOvertimePay = 0;
+  let totalPay = 0;
+
   const rows = records.map((record) => {
     const clockOutTime = parseTime(record.clockOut);
+    const staff = staffList.find((s) => s.id === record.staffId);
+    const baseHourlyWage = staff?.hourlyWage ?? 0;
+    const applicableAllowances = getApplicableAllowances(record, allowances);
+    const { wage: hourlyWage } = getEffectiveHourlyWage(baseHourlyWage, applicableAllowances);
+
+    const grossWorkMinutes = getWorkedMinutes(record, clockOutTime ?? new Date());
+    const overtimeMinutes = getOvertimeMinutes(record, clockOutTime ?? new Date());
+    const regularMinutes = Math.max(0, grossWorkMinutes - overtimeMinutes);
+    const regularPay = (regularMinutes / 60) * hourlyWage;
+    const overtimePay = (overtimeMinutes / 60) * hourlyWage * 1.25;
+    const dayPay = regularPay + overtimePay;
+
+    totalRegularPay += regularPay;
+    totalOvertimePay += overtimePay;
+    totalPay += dayPay;
+
     return [
       record.workDate,
       record.staffName,
       formatDateTime(record.clockIn),
       formatDateTime(record.clockOut),
       formatMinutes(record.totalBreakMinutes),
-      formatMinutes(getWorkedMinutes(record, clockOutTime ?? new Date())),
-      formatMinutes(getOvertimeMinutes(record, clockOutTime ?? new Date())),
-      record.status,
+      formatMinutes(grossWorkMinutes),
+      formatMinutes(overtimeMinutes),
+      formatCurrency(regularPay),
+      formatCurrency(overtimePay),
+      formatCurrency(dayPay),
     ];
   });
 
-  return [header, ...rows]
+  const totalRow = ["", "", "", "", "", "", "合計", formatCurrency(totalRegularPay), formatCurrency(totalOvertimePay), formatCurrency(totalPay)];
+
+  return [header, ...rows, totalRow]
     .map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(","))
     .join("\n");
 }

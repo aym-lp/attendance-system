@@ -100,12 +100,13 @@ export function AttendanceApp() {
 
   const exportCsv = (staffId: string, month: string) => {
     const filteredRecords = staffId === "all" ? records.filter((r) => r.workDate.startsWith(month)) : records.filter((r) => r.staffId === staffId && r.workDate.startsWith(month));
-    const csv = `\uFEFF${recordsToCsv(filteredRecords)}`;
+    const csv = `\uFEFF${recordsToCsv(filteredRecords, staffList, allowances)}`;
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `attendance-${staffId === "all" ? "all" : staffId}-${month}.csv`;
+    const staffName = staffId === "all" ? "全スタッフ" : (staffList.find((s) => s.id === staffId)?.name ?? staffId);
+    link.download = `${staffName}-${month}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
