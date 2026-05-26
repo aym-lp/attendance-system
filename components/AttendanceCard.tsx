@@ -46,7 +46,7 @@ export function AttendanceCard({ staff, record, message, onLogout, onClockIn, on
           <ActionButton label="休憩終了" onClick={onEndBreak} disabled={record?.status !== "break"} tone="darkCream" />
         </div>
       </div>
-      <p className="mt-4 rounded-2xl bg-[#d7ccc8] px-4 py-3 text-sm font-medium text-[#3e2723]">{message}</p>
+      {message && <p className="mt-4 rounded-2xl bg-[#d7ccc8] px-4 py-3 text-sm font-medium text-[#3e2723]">{message}</p>}
     </div>
   );
 }
