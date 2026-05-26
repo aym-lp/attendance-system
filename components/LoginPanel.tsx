@@ -27,13 +27,15 @@ export function LoginPanel({ pin, message, onPinChange, onLogin }: LoginPanelPro
         <div className="relative mt-6 flex justify-center gap-3" onClick={focusInput}>
           {[0, 1, 2, 3].map((index) => (
             <div key={index} className="relative h-14 w-14">
-              <img
-                src="/pin-img.png"
-                alt=""
-                className="h-full w-full rounded-2xl object-cover"
-              />
-              <div className="absolute inset-0 flex items-center justify-center rounded-2xl">
-                <span className={`text-2xl font-bold ${digits[index] ? "text-[#3e2723]" : "text-[#d7ccc8]"}`}>
+              {!digits[index] && (
+                <img
+                  src="/pin-img.png"
+                  alt=""
+                  className="h-full w-full rounded-2xl object-cover"
+                />
+              )}
+              <div className={`absolute inset-0 flex items-center justify-center rounded-2xl ${digits[index] ? "bg-white" : ""}`}>
+                <span className={`text-3xl font-bold ${digits[index] ? "text-[#3e2723]" : "text-[#d7ccc8]"}`}>
                   {digits[index] ? "●" : "-"}
                 </span>
               </div>

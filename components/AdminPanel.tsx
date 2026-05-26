@@ -582,7 +582,7 @@ function CorrectionHistoryTable({ histories }: { histories: CorrectionHistory[] 
     <div className="mt-4 overflow-x-auto">
       <table className="w-full min-w-[1000px] text-left text-sm">
         <thead className="bg-slate-50 text-slate-500 dark:bg-slate-800">
-          <tr><th className="px-4 py-3">スタッフ名</th><th className="px-4 py-3">修正対象日</th><th className="px-4 py-3">修正項目</th><th className="px-4 py-3">修正前時刻</th><th className="px-4 py-3">修正後時刻</th><th className="px-4 py-3">修正理由</th><th className="px-4 py-3">修正者</th><th className="px-4 py-3">修正日時</th></tr>
+          <tr><th className="px-4 py-3">スタッフ名</th><th className="px-4 py-3">修正対象日</th><th className="px-4 py-3">修正項目</th><th className="px-4 py-3">修正前時刻</th><th className="px-4 py-3">修正後時刻</th><th className="px-4 py-3">修正者</th><th className="px-4 py-3">修正日時</th></tr>
         </thead>
         <tbody>
           {histories.map((history) => (
@@ -592,12 +592,11 @@ function CorrectionHistoryTable({ histories }: { histories: CorrectionHistory[] 
               <td className="px-4 py-3">{correctionFieldLabel[history.field]}</td>
               <td className="px-4 py-3">{formatDateTime(history.beforeValue)}</td>
               <td className="px-4 py-3">{formatDateTime(history.afterValue)}</td>
-              <td className="px-4 py-3">{history.reason}</td>
               <td className="px-4 py-3">{history.correctedBy}</td>
               <td className="px-4 py-3">{new Intl.DateTimeFormat("ja-JP", { dateStyle: "short", timeStyle: "short" }).format(new Date(history.correctedAt))}</td>
             </tr>
           ))}
-          {histories.length === 0 && <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-500">修正履歴はまだありません。</td></tr>}
+          {histories.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">修正履歴はまだありません。</td></tr>}
         </tbody>
       </table>
     </div>
@@ -641,9 +640,6 @@ function TimeInput({ label, value, onChange }: { label: string; value: string; o
     }
   };
 
-  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
-  const minutes = ["00", "15", "30", "45"];
-
   return (
     <label className="flex flex-col gap-1 text-sm font-semibold">
       {label}
@@ -651,38 +647,9 @@ function TimeInput({ label, value, onChange }: { label: string; value: string; o
         type="text"
         value={inputValue}
         onChange={(e) => handleChange(e.target.value)}
-        placeholder="HH:MM"
-        inputMode="numeric"
+        placeholder="HH:MM（例：0830）"
         className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-[#6d4c41] dark:border-slate-700 dark:bg-slate-950"
       />
-      <div className="flex gap-2">
-        <select
-          value={value ? value.slice(0, 2) : ""}
-          onChange={(e) => {
-            const m = value ? value.slice(3, 5) : "00";
-            onChange(`${e.target.value}:${m}`);
-          }}
-          className="h-10 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-950"
-        >
-          <option value="">時</option>
-          {hours.map((h) => (
-            <option key={h} value={h}>{h}</option>
-          ))}
-        </select>
-        <select
-          value={value ? value.slice(3, 5) : ""}
-          onChange={(e) => {
-            const h = value ? value.slice(0, 2) : "00";
-            onChange(`${h}:${e.target.value}`);
-          }}
-          className="h-10 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-950"
-        >
-          <option value="">分</option>
-          {minutes.map((m) => (
-            <option key={m} value={m}>{m}</option>
-          ))}
-        </select>
-      </div>
     </label>
   );
 }
