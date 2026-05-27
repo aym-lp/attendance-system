@@ -14,6 +14,9 @@ const geistMono = Geist_Mono({
 
 const title = "勤怠管理システム";
 const description = "小川珈琲和泉府中店 勤怠管理システム";
+const iconVersion = "20260527";
+const coffeeIcon = `/coffee-img.png?v=${iconVersion}` as const;
+const faviconIcon = `/favicon.ico?v=${iconVersion}` as const;
 
 export const metadata: Metadata = {
   title,
@@ -23,7 +26,7 @@ export const metadata: Metadata = {
     description,
     images: [
       {
-        url: "/coffee-logo.png",
+        url: coffeeIcon,
         alt: title,
       },
     ],
@@ -32,12 +35,15 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title,
     description,
-    images: ["/coffee-logo.png"],
+    images: [coffeeIcon],
   },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title,
+  icons: {
+    icon: [
+      { url: coffeeIcon, type: "image/png" },
+      { url: faviconIcon, rel: "icon", type: "image/x-icon" },
+    ],
+    shortcut: [{ url: coffeeIcon }],
+    apple: [{ url: coffeeIcon, sizes: "180x180", type: "image/png" }],
   },
 };
 
@@ -60,9 +66,13 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <header className="sticky top-0 z-50 bg-white shadow-sm">
-          <div className="mx-auto flex max-w-7xl items-center gap-0 px-4 py-3 sm:px-6 lg:px-8">
+          <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <img src="/OGAWA-logo.png" alt="OGAWA" className="h-10 w-auto" />
             <img src="/coffee-logo.png" alt="Coffee" className="h-12 w-auto" />
+            <div className="flex flex-col text-[#3e2723]">
+              <span className="text-lg font-bold leading-tight">勤怠管理システム</span>
+              <span className="text-sm">小川珈琲和泉府中店 勤怠管理システム</span>
+            </div>
           </div>
         </header>
         {children}
