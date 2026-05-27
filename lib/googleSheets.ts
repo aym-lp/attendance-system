@@ -1,5 +1,12 @@
-const APPS_SCRIPT_URL = (process.env.GOOGLE_APPS_SCRIPT_WEB_APP_URL ?? "").trim();
-const APPS_SCRIPT_TOKEN = (process.env.GOOGLE_APPS_SCRIPT_WEB_APP_TOKEN ?? "").trim();
+import "server-only";
+
+function getAppsScriptUrl(): string {
+  return (process.env.GOOGLE_APPS_SCRIPT_WEB_APP_URL ?? "").trim();
+}
+
+function getAppsScriptToken(): string {
+  return (process.env.GOOGLE_APPS_SCRIPT_WEB_APP_TOKEN ?? "").trim();
+}
 
 // スプレッドシート構造定義：スタッフ名セルを基準に各データセルの相対位置
 const STAFF_LAYOUT = {
@@ -49,20 +56,27 @@ function minutesToHours(minutes: number): number {
   return Math.round((minutes / 60) * 100) / 100;
 }
 
-function ensureScriptUrl() {
-  if (!APPS_SCRIPT_URL) {
+function ensureScriptUrl(url: string) {
+  if (!url) {
     throw new Error("Google Apps Script Web App の URL が .env.local に設定されていません (GOOGLE_APPS_SCRIPT_WEB_APP_URL)。");
   }
 }
 
 async function callAppsScript<T>(action: string, payload: Record<string, unknown>): Promise<T> {
-  ensureScriptUrl();
+  const url = getAppsScriptUrl();
+  const token = getAppsScriptToken();
 
-  const response = await fetch(APPS_SCRIPT_URL, {
+  ensureScriptUrl(url);
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[googleSheets] APP_SCRIPT_URL loaded:", url ? "set" : "missing");
+  }
+
+  const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     redirect: "follow",
-    body: JSON.stringify({ action, token: APPS_SCRIPT_TOKEN || undefined, payload }),
+    body: JSON.stringify({ action, token: token || undefined, payload }),
   });
 
   const text = await response.text();
@@ -159,4 +173,4 @@ export function getLayoutForStaff(staffName: string) {
   return findLayout(staffName);
 }
 
-export { APPS_SCRIPT_URL };
+export { getAppsScriptUrl };
