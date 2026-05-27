@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Allowance, AttendanceRecord, CorrectionField, CorrectionHistory, Staff } from "@/lib/types";
 import { buildMonthlySummary, createEmptyRecord, getTodayKey, recordsToCsv } from "@/lib/time";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -9,53 +9,169 @@ import { AdminPanel } from "@/components/AdminPanel";
 import { AttendanceCard } from "@/components/AttendanceCard";
 import { LoginPanel } from "@/components/LoginPanel";
 import { loadPersistedData, savePersistedData } from "@/lib/localStorage";
+import {
+  deleteAllowance as deleteAllowanceCloud,
+  fetchAllowances,
+  fetchAttendanceRecords,
+  fetchAttendanceSnapshot,
+  fetchCorrectionHistories,
+  fetchStaffList,
+  insertAllowance as insertAllowanceCloud,
+  insertCorrectionHistories as insertCorrectionHistoriesCloud,
+  subscribeToAttendanceData,
+  upsertAttendanceRecord,
+  upsertStaff,
+  updateStaffFields,
+} from "@/lib/supabaseData";
 
 const seedData = generateSeedData();
 const seedMonths = Array.from(new Set(seedData.records.map((record) => record.workDate.slice(0, 7)))).sort().reverse();
 
 export function AttendanceApp() {
+  const cloudEnabled = isSupabaseConfigured;
+
+  const persistedData = !cloudEnabled ? loadPersistedData() : null;
+
   const [pin, setPin] = useState("");
   const [currentStaff, setCurrentStaff] = useState<Staff | null>(null);
-  const [staffList, setStaffList] = useState(seedData.staff);
-  const [records, setRecords] = useState<AttendanceRecord[]>(seedData.records);
-  const [correctionHistories, setCorrectionHistories] = useState<CorrectionHistory[]>(seedData.histories);
-  const [allowances, setAllowances] = useState<Allowance[]>(seedData.allowances ?? []);
-  const [message, setMessage] = useState("PINを入力してください");
-  const [selectedMonth, setSelectedMonth] = useState(() => seedMonths[0] ?? getTodayKey().slice(0, 7));
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [staffList, setStaffList] = useState<Staff[]>(() => {
+    if (cloudEnabled) return [];
+    if (persistedData?.staff?.length) return persistedData.staff;
+    return seedData.staff;
+  });
+  const [records, setRecords] = useState<AttendanceRecord[]>(() => {
+    if (cloudEnabled) return [];
+    if (persistedData?.records?.length) return persistedData.records;
+    return seedData.records;
+  });
+  const [correctionHistories, setCorrectionHistories] = useState<CorrectionHistory[]>(() => {
+    if (cloudEnabled) return [];
+    if (persistedData?.histories?.length) return persistedData.histories;
+    return seedData.histories;
+  });
+  const [allowances, setAllowances] = useState<Allowance[]>(() => {
+    if (cloudEnabled) return [];
+    if (persistedData?.allowances?.length) return persistedData.allowances;
+    return seedData.allowances ?? [];
+  });
+  const [message, setMessage] = useState(cloudEnabled ? "クラウドデータを読み込み中..." : "PINを入力してください");
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    if (cloudEnabled) return getTodayKey().slice(0, 7);
+    const months = new Set((persistedData?.records ?? seedData.records).map((record) => record.workDate.slice(0, 7)));
+    const sorted = Array.from(months).sort().reverse();
+    return sorted[0] ?? getTodayKey().slice(0, 7);
+  });
+  const [isInitialized, setIsInitialized] = useState(!cloudEnabled);
+  const [isCloudLoading, setIsCloudLoading] = useState(cloudEnabled);
+  const [cloudError, setCloudError] = useState<string | null>(null);
+
+  const recordsRef = useRef(records);
+  useEffect(() => {
+    recordsRef.current = records;
+  }, [records]);
 
   const availableMonths = useMemo(() => {
     const months = new Set(records.map((record) => record.workDate.slice(0, 7)));
     return Array.from(months).sort().reverse();
   }, [records]);
 
-  useEffect(() => {
-    if (availableMonths.length === 0) return;
-    if (!availableMonths.includes(selectedMonth)) {
-      setSelectedMonth(availableMonths[0]);
-    }
-  }, [availableMonths, selectedMonth]);
-
-  useEffect(() => {
-    const persisted = loadPersistedData();
-    if (persisted) {
-      if (persisted.staff.length > 0) {
-        setStaffList(persisted.staff);
-      }
-      if (persisted.records.length > 0) {
-        setRecords(persisted.records);
-      }
-      if (persisted.histories.length > 0) {
-        setCorrectionHistories(persisted.histories);
-      }
-      if (persisted.allowances.length > 0) {
-        setAllowances(persisted.allowances);
-      }
-    }
-    setIsInitialized(true);
+  const handleCloudError = useCallback((error: unknown, fallback: string) => {
+    console.error(error);
+    setCloudError(fallback);
+    setMessage(fallback);
   }, []);
 
+  const refreshStaff = useCallback(async () => {
+    if (!cloudEnabled) return;
+    try {
+      const data = await fetchStaffList();
+      setStaffList(data);
+      setCloudError(null);
+    } catch (error) {
+      handleCloudError(error, "スタッフ情報の取得に失敗しました");
+    }
+  }, [cloudEnabled, handleCloudError]);
+
+  const refreshRecords = useCallback(async () => {
+    if (!cloudEnabled) return;
+    try {
+      const data = await fetchAttendanceRecords();
+      setRecords(data);
+      setCloudError(null);
+    } catch (error) {
+      handleCloudError(error, "勤務データの取得に失敗しました");
+    }
+  }, [cloudEnabled, handleCloudError]);
+
+  const refreshAllowances = useCallback(async () => {
+    if (!cloudEnabled) return;
+    try {
+      const data = await fetchAllowances();
+      setAllowances(data);
+      setCloudError(null);
+    } catch (error) {
+      handleCloudError(error, "特別手当の取得に失敗しました");
+    }
+  }, [cloudEnabled, handleCloudError]);
+
+  const refreshCorrections = useCallback(async () => {
+    if (!cloudEnabled) return;
+    try {
+      const data = await fetchCorrectionHistories();
+      setCorrectionHistories(data);
+      setCloudError(null);
+    } catch (error) {
+      handleCloudError(error, "修正履歴の取得に失敗しました");
+    }
+  }, [cloudEnabled, handleCloudError]);
+
+  const initializeFromCloud = useCallback(async () => {
+    if (!cloudEnabled) return;
+    setIsCloudLoading(true);
+    setMessage("クラウドデータを読み込み中...");
+    try {
+      const snapshot = await fetchAttendanceSnapshot();
+      setStaffList(snapshot.staff);
+      setRecords(snapshot.records);
+      setAllowances(snapshot.allowances);
+      setCorrectionHistories(snapshot.histories);
+      setCloudError(null);
+      setMessage("PINを入力してください");
+    } catch (error) {
+      handleCloudError(error, "クラウドからデータを取得できませんでした");
+    } finally {
+      setIsInitialized(true);
+      setIsCloudLoading(false);
+    }
+  }, [cloudEnabled, handleCloudError]);
+
   useEffect(() => {
+    if (cloudEnabled) {
+      let cancelled = false;
+      let unsubscribe: (() => void) | undefined;
+
+      (async () => {
+        await initializeFromCloud();
+        if (cancelled) return;
+        unsubscribe = subscribeToAttendanceData({
+          onStaffChange: refreshStaff,
+          onRecordsChange: refreshRecords,
+          onAllowancesChange: refreshAllowances,
+          onCorrectionsChange: refreshCorrections,
+        });
+      })();
+
+      return () => {
+        cancelled = true;
+        unsubscribe?.();
+      };
+    }
+
+    setIsInitialized(true);
+  }, [cloudEnabled, initializeFromCloud, refreshAllowances, refreshCorrections, refreshRecords, refreshStaff]);
+
+  useEffect(() => {
+    if (cloudEnabled) return;
     if (!isInitialized) return;
     savePersistedData({
       staff: staffList,
@@ -63,7 +179,7 @@ export function AttendanceApp() {
       allowances,
       histories: correctionHistories,
     });
-  }, [staffList, records, allowances, correctionHistories, isInitialized]);
+  }, [cloudEnabled, staffList, records, allowances, correctionHistories, isInitialized]);
 
   const currentRecord = useMemo(() => {
     if (!currentStaff) return null;
@@ -76,71 +192,122 @@ export function AttendanceApp() {
     return records.filter((record) => record.staffId === currentStaff.id);
   }, [records, currentStaff]);
 
-  const monthlySummary = useMemo(() => buildMonthlySummary(displayRecords, selectedMonth, staffList, allowances), [displayRecords, selectedMonth, staffList, allowances]);
+  const normalizedMonth = useMemo(() => {
+    if (availableMonths.length === 0) return selectedMonth;
+    return availableMonths.includes(selectedMonth) ? selectedMonth : availableMonths[0];
+  }, [availableMonths, selectedMonth]);
 
-  const login = (pinValue = pin) => {
-    const normalizedPin = pinValue.trim();
-    const staff = staffList.find((item) => item.pin === normalizedPin && item.isActive);
+  const monthlySummary = useMemo(() => buildMonthlySummary(displayRecords, normalizedMonth, staffList, allowances), [displayRecords, normalizedMonth, staffList, allowances]);
 
-    if (!staff) {
-      setMessage(`PIN「${normalizedPin || "未入力"}」は登録されていません`);
-      return;
-    }
+  const login = useCallback(
+    (pinValue = pin) => {
+      if (cloudEnabled && (isCloudLoading || !isInitialized)) {
+        setMessage("データを読み込み中です。少しお待ちください。");
+        return;
+      }
 
-    setCurrentStaff(staff);
-    setPin("");
-    setMessage("");
-  };
+      const normalizedPin = pinValue.trim();
+      const staff = staffList.find((item) => item.pin === normalizedPin && item.isActive);
+
+      if (!staff) {
+        setMessage(`PIN「${normalizedPin || "未入力"}」は登録されていません`);
+        return;
+      }
+
+      setCurrentStaff(staff);
+      setPin("");
+      setMessage("");
+    },
+    [cloudEnabled, isCloudLoading, isInitialized, pin, staffList],
+  );
 
   const logout = () => {
     setCurrentStaff(null);
     setMessage("ログアウトしました");
   };
 
-  const updateTodayRecord = (updater: (record: AttendanceRecord) => AttendanceRecord) => {
-    if (!currentStaff) return;
+  const updateTodayRecord = useCallback(
+    async (updater: (record: AttendanceRecord) => AttendanceRecord) => {
+      if (!currentStaff) return null;
 
-    setRecords((prev) => {
       const today = getTodayKey();
-      const existing = prev.find((record) => record.staffId === currentStaff.id && record.workDate === today);
-      const baseRecord = existing ?? createEmptyRecord(currentStaff);
-      const updated = updater(baseRecord);
+      const prevRecords = recordsRef.current;
+      const existing = prevRecords.find((record) => record.staffId === currentStaff.id && record.workDate === today);
+      const baseRecord = existing ? { ...existing } : createEmptyRecord(currentStaff);
+      const updated = updater({ ...baseRecord });
 
-      if (existing) {
-        return prev.map((record) => (record.id === existing.id ? updated : record));
+      const nextRecords = existing ? prevRecords.map((record) => (record.id === updated.id ? updated : record)) : [updated, ...prevRecords];
+      setRecords(nextRecords);
+      recordsRef.current = nextRecords;
+
+      if (cloudEnabled) {
+        try {
+          await upsertAttendanceRecord(updated);
+          setCloudError(null);
+        } catch (error) {
+          handleCloudError(error, "勤務データの保存に失敗しました");
+          await refreshRecords();
+          return null;
+        }
       }
 
-      return [updated, ...prev];
-    });
-  };
+      return updated;
+    },
+    [cloudEnabled, currentStaff, handleCloudError, refreshRecords],
+  );
 
-  const clockIn = () => {
-    updateTodayRecord((record) => ({ ...record, clockIn: record.clockIn ?? new Date().toISOString(), status: "working" }));
-    setMessage("出勤しました");
-  };
+  const clockIn = useCallback(async () => {
+    const now = new Date().toISOString();
+    const updated = await updateTodayRecord((record) => ({
+      ...record,
+      clockIn: record.clockIn ?? now,
+      status: "working",
+    }));
+    if (updated) {
+      setMessage("出勤しました");
+    }
+  }, [updateTodayRecord]);
 
-  const startBreak = () => {
-    updateTodayRecord((record) => ({ ...record, breakStart: new Date().toISOString(), breakEnd: null, status: "break" }));
-    setMessage("休憩を開始しました");
-  };
+  const startBreak = useCallback(async () => {
+    const now = new Date().toISOString();
+    const updated = await updateTodayRecord((record) => ({
+      ...record,
+      breakStart: now,
+      breakEnd: null,
+      status: "break",
+    }));
+    if (updated) {
+      setMessage("休憩を開始しました");
+    }
+  }, [updateTodayRecord]);
 
-  const endBreak = () => {
-    updateTodayRecord((record) => {
-      const breakMinutes = record.breakStart ? Math.max(0, (Date.now() - new Date(record.breakStart).getTime()) / 60000) : 0;
+  const endBreak = useCallback(async () => {
+    const now = new Date().toISOString();
+    const updated = await updateTodayRecord((record) => {
+      const breakMinutes = record.breakStart ? Math.max(0, (new Date(now).getTime() - new Date(record.breakStart).getTime()) / 60000) : 0;
       return {
         ...record,
-        breakEnd: new Date().toISOString(),
+        breakEnd: now,
         totalBreakMinutes: record.totalBreakMinutes + breakMinutes,
         status: "working",
       };
     });
-    setMessage("休憩を終了しました");
-  };
+    if (updated) {
+      setMessage("休憩を終了しました");
+    }
+  }, [updateTodayRecord]);
 
-  const clockOut = () => {
-    updateTodayRecord((record) => ({ ...record, clockOut: new Date().toISOString(), status: "finished" }));
-    setMessage("退勤しました。お疲れさまでした");
-  };
+  const clockOut = useCallback(async () => {
+    const now = new Date().toISOString();
+    const updated = await updateTodayRecord((record) => ({
+      ...record,
+      clockOut: now,
+      status: "finished",
+    }));
+    if (updated) {
+      setMessage("退勤しました。お疲れさまでした");
+    }
+  }, [updateTodayRecord]);
 
   const exportCsv = (staffId: string, month: string) => {
     const filteredRecords = staffId === "all" ? records.filter((r) => r.workDate.startsWith(month)) : records.filter((r) => r.staffId === staffId && r.workDate.startsWith(month));
@@ -155,28 +322,57 @@ export function AttendanceApp() {
     URL.revokeObjectURL(url);
   };
 
-  const addStaff = (staff: Omit<Staff, "id" | "isActive">) => {
-    const nextNumber = staffList.length + 1;
-    const newStaff: Staff = {
-      ...staff,
-      id: `STF-${nextNumber.toString().padStart(3, "0")}`,
-      isActive: true,
-    };
+  const addStaff = useCallback(
+    (staff: Omit<Staff, "id" | "isActive">) => {
+      const newStaff: Staff = {
+        ...staff,
+        id: crypto.randomUUID(),
+        isActive: true,
+      };
 
-    setStaffList((prev) => [...prev, newStaff]);
-    setMessage(`${newStaff.name}さんを登録しました`);
-  };
+      setStaffList((prev) => [...prev, newStaff]);
+      setMessage(`${newStaff.name}さんを登録しました`);
 
-  const updateStaff = (id: string, staff: Partial<Omit<Staff, "id" | "isActive">>) => {
-    setStaffList((prev) => prev.map((item) => (item.id === id ? { ...item, ...staff } : item)));
-    setMessage("スタッフ情報を更新しました");
-  };
+      if (cloudEnabled) {
+        void (async () => {
+          try {
+            await upsertStaff(newStaff);
+            setCloudError(null);
+          } catch (error) {
+            handleCloudError(error, "スタッフ情報の保存に失敗しました");
+            await refreshStaff();
+          }
+        })();
+      }
+    },
+    [cloudEnabled, handleCloudError, refreshStaff],
+  );
 
-  const updateAttendanceRecord = (recordId: string, values: Pick<AttendanceRecord, CorrectionField>) => {
-    if (!currentStaff) return;
+  const updateStaff = useCallback(
+    (id: string, patch: Partial<Omit<Staff, "id" | "isActive">>) => {
+      setStaffList((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+      setMessage("スタッフ情報を更新しました");
 
-    setRecords((prev) =>
-      prev.map((record) => {
+      if (cloudEnabled) {
+        void (async () => {
+          try {
+            await updateStaffFields(id, patch);
+            setCloudError(null);
+          } catch (error) {
+            handleCloudError(error, "スタッフ情報の更新に失敗しました");
+            await refreshStaff();
+          }
+        })();
+      }
+    },
+    [cloudEnabled, handleCloudError, refreshStaff],
+  );
+
+  const updateAttendanceRecord = useCallback(
+    (recordId: string, values: Pick<AttendanceRecord, CorrectionField>) => {
+      if (!currentStaff) return;
+
+      const updatedRecords = recordsRef.current.map((record) => {
         if (record.id !== recordId) return record;
 
         const fields: CorrectionField[] = ["clockIn", "clockOut", "breakStart", "breakEnd"];
@@ -199,6 +395,16 @@ export function AttendanceApp() {
 
         if (histories.length > 0) {
           setCorrectionHistories((current) => [...histories, ...current]);
+          if (cloudEnabled) {
+            void (async () => {
+              try {
+                await insertCorrectionHistoriesCloud(histories);
+                setCloudError(null);
+              } catch (error) {
+                handleCloudError(error, "修正履歴の保存に失敗しました");
+              }
+            })();
+          }
         }
 
         const totalBreakMinutes =
@@ -212,21 +418,57 @@ export function AttendanceApp() {
           totalBreakMinutes,
           status: values.clockOut ? "finished" : record.status,
         };
-      }),
-    );
-    setMessage("打刻を修正しました");
-  };
+      });
 
-  const createAttendanceRecord = (record: Omit<AttendanceRecord, "workMinutes" | "overtimeMinutes" | "nightMinutes">) => {
-    const newRecord: AttendanceRecord = {
-      ...record,
-      workMinutes: 0,
-      overtimeMinutes: 0,
-      nightMinutes: 0,
-    };
-    setRecords((prev) => [newRecord, ...prev]);
-    setMessage("勤務履歴を作成しました");
-  };
+      setRecords(updatedRecords);
+      recordsRef.current = updatedRecords;
+      setMessage("打刻を修正しました");
+
+      if (cloudEnabled) {
+        const target = updatedRecords.find((item) => item.id === recordId);
+        if (target) {
+          void (async () => {
+            try {
+              await upsertAttendanceRecord(target);
+              setCloudError(null);
+            } catch (error) {
+              handleCloudError(error, "勤務データの保存に失敗しました");
+              await refreshRecords();
+            }
+          })();
+        }
+      }
+    },
+    [cloudEnabled, currentStaff, handleCloudError, refreshRecords],
+  );
+
+  const createAttendanceRecord = useCallback(
+    (record: Omit<AttendanceRecord, "workMinutes" | "overtimeMinutes" | "nightMinutes">) => {
+      const newRecord: AttendanceRecord = {
+        ...record,
+        workMinutes: 0,
+        overtimeMinutes: 0,
+        nightMinutes: 0,
+      };
+      const nextRecords = [newRecord, ...recordsRef.current];
+      setRecords(nextRecords);
+      recordsRef.current = nextRecords;
+      setMessage("勤務履歴を作成しました");
+
+      if (cloudEnabled) {
+        void (async () => {
+          try {
+            await upsertAttendanceRecord(newRecord);
+            setCloudError(null);
+          } catch (error) {
+            handleCloudError(error, "勤務データの保存に失敗しました");
+            await refreshRecords();
+          }
+        })();
+      }
+    },
+    [cloudEnabled, handleCloudError, refreshRecords],
+  );
 
   return (
     <main className="min-h-screen bg-[#faf8f5] text-[#3e2723]">
@@ -260,8 +502,39 @@ export function AttendanceApp() {
               onUpdateStaff={updateStaff}
               onUpdateRecord={updateAttendanceRecord}
               onCreateRecord={createAttendanceRecord}
-              onAddAllowance={(a) => { setAllowances((prev) => [...prev, { ...a, id: crypto.randomUUID() }]); setMessage(`手当「${a.name}」を登録しました`); }}
-              onDeleteAllowance={(id) => { setAllowances((prev) => prev.filter((x) => x.id !== id)); setMessage("手当を削除しました"); }}
+              onAddAllowance={(allowance) => {
+                const newAllowance = { ...allowance, id: crypto.randomUUID() };
+                setAllowances((prev) => [...prev, newAllowance]);
+                setMessage(`手当「${allowance.name}」を登録しました`);
+
+                if (cloudEnabled) {
+                  void (async () => {
+                    try {
+                      await insertAllowanceCloud(newAllowance);
+                      setCloudError(null);
+                    } catch (error) {
+                      handleCloudError(error, "特別手当の保存に失敗しました");
+                      await refreshAllowances();
+                    }
+                  })();
+                }
+              }}
+              onDeleteAllowance={(id) => {
+                setAllowances((prev) => prev.filter((item) => item.id !== id));
+                setMessage("手当を削除しました");
+
+                if (cloudEnabled) {
+                  void (async () => {
+                    try {
+                      await deleteAllowanceCloud(id);
+                      setCloudError(null);
+                    } catch (error) {
+                      handleCloudError(error, "特別手当の削除に失敗しました");
+                      await refreshAllowances();
+                    }
+                  })();
+                }
+              }}
             />
           </section>
         )}

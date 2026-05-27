@@ -52,7 +52,27 @@ npm run lint
 
 ### 環境変数
 
-データベース連携を使用する場合、`.env.example` を参考に環境変数を設定してください。
+クラウドで勤怠データを共有する場合、`.env.example` を参考に Supabase / Google Apps Script の環境変数を設定してください。
+
+```bash
+# .env.local
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-public-anon-key
+GOOGLE_APPS_SCRIPT_WEB_APP_URL=https://script.google.com/macros/s/your-web-app-id/exec
+GOOGLE_APPS_SCRIPT_WEB_APP_TOKEN=your-optional-secret-token
+```
+
+Supabase の環境変数が設定されていない場合は、従来どおりブラウザの localStorage に勤怠データを保存するモードで動作します。
+
+### Supabase セットアップ（任意 / 推奨）
+
+1. [Supabase](https://supabase.com/) で新しいプロジェクトを作成
+2. プロジェクトの SQL Editor で [`supabase/schema.sql`](./supabase/schema.sql) を実行し、必要なテーブル・トリガーを作成
+3. **Database > Replication > Realtime** で `staff` / `attendance_records` / `allowances` / `correction_histories` テーブルを購読対象に追加
+4. プロジェクト設定から `URL` と `anon` キーを取得して `.env.local` に設定
+5. Vercel など本番環境にも同じ値を登録
+
+Supabase を有効化すると、出勤・退勤などの打刻がリアルタイムでクラウドに保存され、複数端末間で自動同期されます。
 
 ## Google Apps Script 連携設定（給与明細自動反映）
 
