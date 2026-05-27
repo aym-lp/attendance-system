@@ -69,10 +69,6 @@ export default function RootLayout({
           <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <img src="/OGAWA-logo.png" alt="OGAWA" className="h-10 w-auto" />
             <img src="/coffee-logo.png" alt="Coffee" className="h-12 w-auto" />
-            <div className="flex flex-col text-[#3e2723]">
-              <span className="text-lg font-bold leading-tight">勤怠管理システム</span>
-              <span className="text-sm">小川珈琲和泉府中店 勤怠管理システム</span>
-            </div>
           </div>
         </header>
         {children}
