@@ -367,6 +367,10 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
                 <p className="font-bold">{formatCurrency(selectedSummary.overtimePay)}</p>
               </div>
               <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
+                <p className="text-sm text-slate-500">特別手当</p>
+                <p className="font-bold">{formatCurrency(selectedSummary.allowancePay)}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
                 <p className="text-sm text-slate-500">交通費</p>
                 <p className="font-bold">{formatCurrency(selectedSummary.transportationAllowance)}</p>
               </div>

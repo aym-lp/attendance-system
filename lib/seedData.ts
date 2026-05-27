@@ -2,7 +2,7 @@ import type { Staff, AttendanceRecord, CorrectionHistory, AttendanceSummary, Sta
 
 const staffNames = [
   { name: "細田 径弘", kana: "ホソダ ミチヒロ", role: "manager" as StaffRole, hourlyWage: 0, transportationAllowance: 0 },
-  { name: "和島 亜純", kana: "ワジマ アジュン", role: "staff" as StaffRole, hourlyWage: 1310, transportationAllowance: 0 },
+  { name: "和島 亜純", kana: "ワジマ アジュン", role: "staff" as StaffRole, hourlyWage: 1310, transportationAllowance: 530 },
   { name: "小野林 茜", kana: "オノバヤシ アカネ", role: "staff" as StaffRole, hourlyWage: 1207, transportationAllowance: 0 },
   { name: "樋口 凛", kana: "ヒグチ リン", role: "staff" as StaffRole, hourlyWage: 1177, transportationAllowance: 0 },
   { name: "杉本 羅希", kana: "スギモト ラキ", role: "staff" as StaffRole, hourlyWage: 1177, transportationAllowance: 0 },
@@ -186,7 +186,8 @@ export function generateSeedMonthlySummary(staffList: Staff[], records: Attendan
       const overtimePay = Math.floor((overtimeMinutes / 60) * staff.hourlyWage * 1.25);
       const nightPay = Math.floor((nightMinutes / 60) * staff.hourlyWage * 1.35);
       const transportationAllowance = workDays * staff.transportationAllowance;
-      const totalPay = basePay + overtimePay + nightPay + transportationAllowance;
+      const allowancePay = 0;
+      const totalPay = basePay + overtimePay + nightPay + allowancePay + transportationAllowance;
 
       summaries.push({
         staffId: staff.id,
@@ -197,9 +198,11 @@ export function generateSeedMonthlySummary(staffList: Staff[], records: Attendan
         breakMinutes,
         overtimeMinutes,
         nightMinutes,
+        allowanceMinutes: 0,
         basePay,
         overtimePay,
         nightPay,
+        allowancePay,
         transportationAllowance,
         totalPay,
       });

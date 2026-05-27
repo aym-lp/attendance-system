@@ -39,9 +39,11 @@ export type AttendanceSummary = {
   breakMinutes: number;
   overtimeMinutes: number;
   nightMinutes: number;
+  allowanceMinutes: number;
   basePay: number;
   overtimePay: number;
   nightPay: number;
+  allowancePay: number;
   transportationAllowance: number;
   totalPay: number;
 };

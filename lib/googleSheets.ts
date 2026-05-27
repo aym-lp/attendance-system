@@ -18,18 +18,128 @@ function getAppsScriptToken(): string {
 
 // スプレッドシート構造定義：スタッフ名セルを基準に各データセルの相対位置
 const STAFF_LAYOUT = {
-  "和島亜純": { nameCell: "A5", workDays: "B5", workHours: "C5", overtimeHours: "D5", holidayHours: "E5" },
-  "和島 亜純": { nameCell: "A5", workDays: "B5", workHours: "C5", overtimeHours: "D5", holidayHours: "E5" },
-  "小野林茜": { nameCell: "A21", workDays: "B21", workHours: "C21", overtimeHours: "D21", holidayHours: "E21" },
-  "小野林 茜": { nameCell: "A21", workDays: "B21", workHours: "C21", overtimeHours: "D21", holidayHours: "E21" },
-  "樋口凛": { nameCell: "A35", workDays: "B35", workHours: "C35", overtimeHours: "D35", holidayHours: "E35" },
-  "樋口 凛": { nameCell: "A35", workDays: "B35", workHours: "C35", overtimeHours: "D35", holidayHours: "E35" },
-  "杉本羅希": { nameCell: "A50", workDays: "B50", workHours: "C50", overtimeHours: "D50", holidayHours: "E50" },
-  "杉本 羅希": { nameCell: "A50", workDays: "B50", workHours: "C50", overtimeHours: "D50", holidayHours: "E50" },
+  "和島亜純": {
+    nameCell: "A5",
+    workDays: "B6",
+    workHours: "C6",
+    overtimeHours: "D6",
+    holidayHours: "E6",
+    basePay: "B8",
+    overtimePay: "C8",
+    transportationAllowance: "D8",
+    holidayAllowance: "E8",
+  },
+  "和島 亜純": {
+    nameCell: "A5",
+    workDays: "B6",
+    workHours: "C6",
+    overtimeHours: "D6",
+    holidayHours: "E6",
+    basePay: "B8",
+    overtimePay: "C8",
+    transportationAllowance: "D8",
+    holidayAllowance: "E8",
+  },
+  "小野林茜": {
+    nameCell: "A21",
+    workDays: "B21",
+    workHours: "C21",
+    overtimeHours: "D21",
+    holidayHours: "E21",
+    basePay: "B23",
+    overtimePay: "C23",
+    transportationAllowance: "D23",
+    holidayAllowance: "E23",
+  },
+  "小野林 茜": {
+    nameCell: "A21",
+    workDays: "B21",
+    workHours: "C21",
+    overtimeHours: "D21",
+    holidayHours: "E21",
+    basePay: "B23",
+    overtimePay: "C23",
+    transportationAllowance: "D23",
+    holidayAllowance: "E23",
+  },
+  "樋口凛": {
+    nameCell: "A35",
+    workDays: "B35",
+    workHours: "C35",
+    overtimeHours: "D35",
+    holidayHours: "E35",
+    basePay: "B37",
+    overtimePay: "C37",
+    transportationAllowance: "D37",
+    holidayAllowance: "E37",
+  },
+  "樋口 凛": {
+    nameCell: "A35",
+    workDays: "B35",
+    workHours: "C35",
+    overtimeHours: "D35",
+    holidayHours: "E35",
+    basePay: "B37",
+    overtimePay: "C37",
+    transportationAllowance: "D37",
+    holidayAllowance: "E37",
+  },
+  "杉本羅希": {
+    nameCell: "A50",
+    workDays: "B50",
+    workHours: "C50",
+    overtimeHours: "D50",
+    holidayHours: "E50",
+    basePay: "B52",
+    overtimePay: "C52",
+    transportationAllowance: "D52",
+    holidayAllowance: "E52",
+  },
+  "杉本 羅希": {
+    nameCell: "A50",
+    workDays: "B50",
+    workHours: "C50",
+    overtimeHours: "D50",
+    holidayHours: "E50",
+    basePay: "B52",
+    overtimePay: "C52",
+    transportationAllowance: "D52",
+    holidayAllowance: "E52",
+  },
+  "出嶋晴翔": {
+    nameCell: "A65",
+    workDays: "B65",
+    workHours: "C65",
+    overtimeHours: "D65",
+    holidayHours: "E65",
+    basePay: "B67",
+    overtimePay: "C67",
+    transportationAllowance: "D67",
+    holidayAllowance: "E67",
+  },
+  "出嶋 晴翔": {
+    nameCell: "A65",
+    workDays: "B65",
+    workHours: "C65",
+    overtimeHours: "D65",
+    holidayHours: "E65",
+    basePay: "B67",
+    overtimePay: "C67",
+    transportationAllowance: "D67",
+    holidayAllowance: "E67",
+  },
 } as const;
 
 export type StaffSpreadsheetLayout = typeof STAFF_LAYOUT;
-export type SyncField = "workDays" | "workHours" | "overtimeHours" | "holidayHours";
+export type SyncField =
+  | "workDays"
+  | "workHours"
+  | "overtimeHours"
+  | "holidayHours"
+  | "basePay"
+  | "overtimePay"
+  | "transportationAllowance"
+  | "holidayAllowance";
 
 export interface SyncPreviewField {
   key: SyncField;
@@ -56,12 +166,20 @@ interface SyncSummary {
   workMinutes: number;
   overtimeMinutes: number;
   nightMinutes: number;
+  allowanceMinutes: number;
+  basePay: number;
+  overtimePay: number;
+  transportationAllowance: number;
+  holidayAllowance: number;
 }
 
-const FIELD_ORDER: SyncField[] = ["workDays", "workHours", "overtimeHours", "holidayHours"];
+const FIELD_ORDER: SyncField[] = ["workDays", "workHours", "overtimeHours", "holidayHours", "basePay", "overtimePay", "transportationAllowance", "holidayAllowance"];
 
-function minutesToHours(minutes: number): number {
-  return Math.round((minutes / 60) * 100) / 100;
+function minutesToTimeString(minutes: number): string {
+  const safeMinutes = Number.isFinite(minutes) ? Math.max(0, Math.round(minutes)) : 0;
+  const hours = Math.floor(safeMinutes / 60);
+  const rest = safeMinutes % 60;
+  return `${hours}:${rest.toString().padStart(2, "0")}`;
 }
 
 function ensureScriptUrl(url: string) {
@@ -119,9 +237,13 @@ function buildSyncItems(summaries: SyncSummary[]) {
 
       const fields: { key: SyncField; cell: string; newValue: string }[] = [
         { key: "workDays", cell: layout.workDays, newValue: String(summary.workDays) },
-        { key: "workHours", cell: layout.workHours, newValue: String(minutesToHours(summary.workMinutes)) },
-        { key: "overtimeHours", cell: layout.overtimeHours, newValue: String(minutesToHours(summary.overtimeMinutes)) },
-        { key: "holidayHours", cell: layout.holidayHours, newValue: String(minutesToHours(summary.nightMinutes)) },
+        { key: "workHours", cell: layout.workHours, newValue: minutesToTimeString(summary.workMinutes) },
+        { key: "overtimeHours", cell: layout.overtimeHours, newValue: minutesToTimeString(summary.overtimeMinutes) },
+        { key: "holidayHours", cell: layout.holidayHours, newValue: minutesToTimeString(summary.allowanceMinutes) },
+        { key: "basePay", cell: layout.basePay, newValue: String(summary.basePay) },
+        { key: "overtimePay", cell: layout.overtimePay, newValue: String(summary.overtimePay) },
+        { key: "transportationAllowance", cell: layout.transportationAllowance, newValue: String(summary.transportationAllowance) },
+        { key: "holidayAllowance", cell: layout.holidayAllowance, newValue: String(summary.holidayAllowance) },
       ];
 
       return {

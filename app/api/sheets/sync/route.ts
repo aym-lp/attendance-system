@@ -8,7 +8,18 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { summaries, month } = body as {
-      summaries: { staffName: string; workDays: number; workMinutes: number; overtimeMinutes: number; nightMinutes: number }[];
+      summaries: {
+        staffName: string;
+        workDays: number;
+        workMinutes: number;
+        overtimeMinutes: number;
+        nightMinutes: number;
+        allowanceMinutes: number;
+        basePay: number;
+        overtimePay: number;
+        transportationAllowance: number;
+        holidayAllowance: number;
+      }[];
       month: string;
     };
 

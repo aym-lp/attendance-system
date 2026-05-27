@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { AttendanceRecord, Staff } from "@/lib/types";
-import { formatDateTime, formatMinutes, formatCurrency, getOvertimeMinutes, getWorkedMinutes, roundUpBreakMinutes, getApplicableAllowances, getEffectiveHourlyWage } from "@/lib/time";
+import { formatDateTime, formatMinutes, formatCurrency, roundUpBreakMinutes, calculateRecordPayroll } from "@/lib/time";
 import type { Allowance } from "@/lib/types";
 
 type HistoryTableProps = {
@@ -31,20 +31,23 @@ export function HistoryTable({ records, staffList = [], isAdmin = true, allowanc
     return filtered.sort((a, b) => new Date(b.workDate).getTime() - new Date(a.workDate).getTime());
   }, [records, filterStaffId, filterMonth]);
 
-  function getDailyPay(record: AttendanceRecord): { regularPay: number; overtimePay: number; totalPay: number; breakRounded: number; breakError: boolean; netWorkMinutes: number; overtimeMinutes: number; allowanceLabels: string[] } {
+  function getDailyPay(record: AttendanceRecord): { regularPay: number; overtimePay: number; totalPay: number; breakRounded: number; breakError: boolean; netWorkMinutes: number; overtimeMinutes: number; allowanceLabels: string[]; allowancePay: number } {
     const staff = staffList.find((s) => s.id === record.staffId);
-    const baseHourlyWage = staff?.hourlyWage ?? 0;
-    const applicableAllowances = getApplicableAllowances(record, allowances);
-    const { wage: hourlyWage, labels: allowanceLabels } = getEffectiveHourlyWage(baseHourlyWage, applicableAllowances);
-    const clockOutTime = record.clockOut ? new Date(record.clockOut) : now;
-    const grossWorkMinutes = getWorkedMinutes(record, clockOutTime);
+    const payroll = calculateRecordPayroll(record, staff, allowances, now);
     const { rounded: breakRounded, error: breakError } = record.totalBreakMinutes === 0 ? { rounded: 0, error: false } : roundUpBreakMinutes(record.totalBreakMinutes);
-    const netWorkMinutes = Math.max(0, grossWorkMinutes);
-    const overtimeMinutes = getOvertimeMinutes(record, clockOutTime);
-    const regularMinutes = Math.max(0, netWorkMinutes - overtimeMinutes);
-    const regularPay = (regularMinutes / 60) * hourlyWage;
-    const overtimePay = (overtimeMinutes / 60) * hourlyWage * 1.25;
-    return { regularPay, overtimePay, totalPay: regularPay + overtimePay, breakRounded, breakError, netWorkMinutes, overtimeMinutes, allowanceLabels };
+    const regularPay = payroll.basePay;
+    const overtimePay = payroll.overtimePay;
+    return {
+      regularPay,
+      overtimePay,
+      totalPay: payroll.totalPay,
+      breakRounded,
+      breakError,
+      netWorkMinutes: payroll.workMinutes,
+      overtimeMinutes: payroll.overtimeMinutes,
+      allowanceLabels: payroll.allowanceLabels,
+      allowancePay: payroll.allowancePay,
+    };
   }
 
   const uniqueMonths = useMemo(() => {

@@ -12,13 +12,32 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const title = "勤怠管理システム";
+const description = "小川珈琲和泉府中店 勤怠管理システム";
+
 export const metadata: Metadata = {
-  title: "Ogawa Kintai",
-  description: "店舗アルバイト向け勤怠管理システム",
+  title,
+  description,
+  openGraph: {
+    title,
+    description,
+    images: [
+      {
+        url: "/coffee-logo.png",
+        alt: title,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: ["/coffee-logo.png"],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Ogawa Kintai",
+    title,
   },
 };
 

@@ -41,6 +41,41 @@ export function getEffectiveHourlyWage(baseWage: number, allowances: Allowance[]
   };
 }
 
+export function calculateRecordPayroll(record: AttendanceRecord, staff: Staff | undefined, allowances: Allowance[], now = new Date()) {
+  const baseHourlyWage = staff?.hourlyWage ?? 0;
+  const applicableAllowances = getApplicableAllowances(record, allowances);
+  const allowanceHourlyAddition = applicableAllowances.reduce((sum, allowance) => sum + allowance.hourlyAddition, 0);
+  const allowanceLabels = applicableAllowances.map((allowance) => `${allowance.name} +${allowance.hourlyAddition.toLocaleString()}円`);
+
+  const clockOutTime = parseTime(record.clockOut);
+  const referenceTime = clockOutTime ?? now;
+  const workMinutes = record.workMinutes || getWorkedMinutes(record, referenceTime);
+  const overtimeMinutes = record.overtimeMinutes || getOvertimeMinutes(record, referenceTime);
+  const nightMinutes = record.nightMinutes || 0;
+  const baseMinutes = Math.max(0, workMinutes - overtimeMinutes);
+  const allowanceMinutes = allowanceHourlyAddition > 0 ? workMinutes : 0;
+
+  const basePay = (baseMinutes / 60) * baseHourlyWage;
+  const overtimePay = (overtimeMinutes / 60) * baseHourlyWage * 1.25;
+  const nightPay = (nightMinutes / 60) * baseHourlyWage * 1.35;
+  const allowancePay = (workMinutes / 60) * allowanceHourlyAddition;
+  const totalPay = basePay + overtimePay + nightPay + allowancePay;
+
+  return {
+    workMinutes,
+    baseMinutes,
+    overtimeMinutes,
+    nightMinutes,
+    allowanceMinutes,
+    basePay,
+    overtimePay,
+    nightPay,
+    allowancePay,
+    totalPay,
+    allowanceLabels,
+  };
+}
+
 export function getTodayKey(date = new Date()) {
   return new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Asia/Tokyo",
@@ -142,7 +177,7 @@ export function fromDateTimeInputValue(value: string) {
   return new Date(value).toISOString();
 }
 
-export function buildMonthlySummary(records: AttendanceRecord[], month: string, staffList: Staff[] = []): AttendanceSummary[] {
+export function buildMonthlySummary(records: AttendanceRecord[], month: string, staffList: Staff[] = [], allowances: Allowance[] = []): AttendanceSummary[] {
   const filtered = records.filter((record) => record.workDate.startsWith(month));
   const summaries = new Map<string, AttendanceSummary>();
 
@@ -156,35 +191,31 @@ export function buildMonthlySummary(records: AttendanceRecord[], month: string, 
       breakMinutes: 0,
       overtimeMinutes: 0,
       nightMinutes: 0,
+      allowanceMinutes: 0,
       basePay: 0,
       overtimePay: 0,
       nightPay: 0,
+      allowancePay: 0,
       transportationAllowance: 0,
       totalPay: 0,
     };
 
     const staff = staffList.find((item) => item.id === record.staffId);
-    const hourlyWage = staff?.hourlyWage ?? 0;
     const transportationAllowance = staff?.transportationAllowance ?? 0;
-    const clockOutTime = parseTime(record.clockOut);
-    const workMinutes = record.workMinutes || getWorkedMinutes(record, clockOutTime ?? new Date());
-    const overtimeMinutes = record.overtimeMinutes || getOvertimeMinutes(record, clockOutTime ?? new Date());
-    const nightMinutes = record.nightMinutes || 0;
-    const baseMinutes = Math.max(0, workMinutes - overtimeMinutes);
-    const basePay = (baseMinutes / 60) * hourlyWage;
-    const overtimePay = (overtimeMinutes / 60) * hourlyWage * 1.25;
-    const nightPay = (nightMinutes / 60) * hourlyWage * 1.35;
+    const payroll = calculateRecordPayroll(record, staff, allowances);
 
     current.workDays += record.clockIn ? 1 : 0;
-    current.workMinutes += workMinutes;
+    current.workMinutes += payroll.workMinutes;
     current.breakMinutes += record.totalBreakMinutes;
-    current.overtimeMinutes += overtimeMinutes;
-    current.nightMinutes += nightMinutes;
-    current.basePay += basePay;
-    current.overtimePay += overtimePay;
-    current.nightPay += nightPay;
+    current.overtimeMinutes += payroll.overtimeMinutes;
+    current.nightMinutes += payroll.nightMinutes;
+    current.allowanceMinutes += payroll.allowanceMinutes;
+    current.basePay += payroll.basePay;
+    current.overtimePay += payroll.overtimePay;
+    current.nightPay += payroll.nightPay;
+    current.allowancePay += payroll.allowancePay;
     current.transportationAllowance += transportationAllowance;
-    current.totalPay += basePay + overtimePay + nightPay + transportationAllowance;
+    current.totalPay += payroll.basePay + payroll.overtimePay + payroll.nightPay + payroll.allowancePay + transportationAllowance;
 
     summaries.set(record.staffId, current);
   });
@@ -201,16 +232,12 @@ export function recordsToCsv(records: AttendanceRecord[], staffList: Staff[], al
   const rows = records.map((record) => {
     const clockOutTime = parseTime(record.clockOut);
     const staff = staffList.find((s) => s.id === record.staffId);
-    const baseHourlyWage = staff?.hourlyWage ?? 0;
-    const applicableAllowances = getApplicableAllowances(record, allowances);
-    const { wage: hourlyWage } = getEffectiveHourlyWage(baseHourlyWage, applicableAllowances);
-
-    const grossWorkMinutes = getWorkedMinutes(record, clockOutTime ?? new Date());
-    const overtimeMinutes = getOvertimeMinutes(record, clockOutTime ?? new Date());
-    const regularMinutes = Math.max(0, grossWorkMinutes - overtimeMinutes);
-    const regularPay = (regularMinutes / 60) * hourlyWage;
-    const overtimePay = (overtimeMinutes / 60) * hourlyWage * 1.25;
-    const dayPay = regularPay + overtimePay;
+    const payroll = calculateRecordPayroll(record, staff, allowances, clockOutTime ?? new Date());
+    const grossWorkMinutes = payroll.workMinutes;
+    const overtimeMinutes = payroll.overtimeMinutes;
+    const regularPay = payroll.basePay;
+    const overtimePay = payroll.overtimePay;
+    const dayPay = payroll.totalPay;
 
     totalRegularPay += regularPay;
     totalOvertimePay += overtimePay;

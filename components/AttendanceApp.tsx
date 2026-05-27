@@ -8,6 +8,7 @@ import { generateSeedData } from "@/lib/seedData";
 import { AdminPanel } from "@/components/AdminPanel";
 import { AttendanceCard } from "@/components/AttendanceCard";
 import { LoginPanel } from "@/components/LoginPanel";
+import { loadPersistedData, savePersistedData } from "@/lib/localStorage";
 
 const seedData = generateSeedData();
 const seedMonths = Array.from(new Set(seedData.records.map((record) => record.workDate.slice(0, 7)))).sort().reverse();
@@ -21,6 +22,7 @@ export function AttendanceApp() {
   const [allowances, setAllowances] = useState<Allowance[]>(seedData.allowances ?? []);
   const [message, setMessage] = useState("PINを入力してください");
   const [selectedMonth, setSelectedMonth] = useState(() => seedMonths[0] ?? getTodayKey().slice(0, 7));
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const availableMonths = useMemo(() => {
     const months = new Set(records.map((record) => record.workDate.slice(0, 7)));
@@ -34,6 +36,35 @@ export function AttendanceApp() {
     }
   }, [availableMonths, selectedMonth]);
 
+  useEffect(() => {
+    const persisted = loadPersistedData();
+    if (persisted) {
+      if (persisted.staff.length > 0) {
+        setStaffList(persisted.staff);
+      }
+      if (persisted.records.length > 0) {
+        setRecords(persisted.records);
+      }
+      if (persisted.histories.length > 0) {
+        setCorrectionHistories(persisted.histories);
+      }
+      if (persisted.allowances.length > 0) {
+        setAllowances(persisted.allowances);
+      }
+    }
+    setIsInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+    savePersistedData({
+      staff: staffList,
+      records,
+      allowances,
+      histories: correctionHistories,
+    });
+  }, [staffList, records, allowances, correctionHistories, isInitialized]);
+
   const currentRecord = useMemo(() => {
     if (!currentStaff) return null;
     return records.find((record) => record.staffId === currentStaff.id && record.workDate === getTodayKey()) ?? null;
@@ -45,7 +76,7 @@ export function AttendanceApp() {
     return records.filter((record) => record.staffId === currentStaff.id);
   }, [records, currentStaff]);
 
-  const monthlySummary = useMemo(() => buildMonthlySummary(displayRecords, selectedMonth, staffList), [displayRecords, selectedMonth, staffList]);
+  const monthlySummary = useMemo(() => buildMonthlySummary(displayRecords, selectedMonth, staffList, allowances), [displayRecords, selectedMonth, staffList, allowances]);
 
   const login = (pinValue = pin) => {
     const normalizedPin = pinValue.trim();

@@ -2,20 +2,7 @@
 
 import { useState, useCallback } from "react";
 import type { AttendanceSummary } from "@/lib/types";
-import { formatCurrency } from "@/lib/time";
 import { loadSyncHistory, saveSyncHistory, isMonthAlreadySynced } from "@/lib/syncHistory";
-
-interface SyncField {
-  key: string;
-  cell: string;
-  currentValue: string | null;
-  newValue: string;
-}
-
-interface SyncPreviewItem {
-  staffName: string;
-  fields: SyncField[];
-}
 
 interface SyncResultItem {
   staffName: string;
@@ -30,24 +17,17 @@ interface SpreadsheetSyncPanelProps {
 }
 
 export function SpreadsheetSyncPanel({ month, summaries }: SpreadsheetSyncPanelProps) {
-  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [preview, setPreview] = useState<SyncPreviewItem[] | null>(null);
   const [results, setResults] = useState<SyncResultItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<"idle" | "testing" | "ok" | "error">("idle");
   const [history, setHistory] = useState(() => loadSyncHistory());
-
-  const fieldLabels: Record<string, string> = {
-    workDays: "勤務日数",
-    workHours: "出勤時間（時間）",
-    overtimeHours: "残業時間（時間）",
-    holidayHours: "年末年始時間（時間）",
-  };
 
   const testConnection = useCallback(async () => {
     setConnectionStatus("testing");
     setError(null);
+    setStatusMessage(null);
     try {
       const res = await fetch("/api/sheets/test");
       const data = await res.json();
@@ -63,10 +43,17 @@ export function SpreadsheetSyncPanel({ month, summaries }: SpreadsheetSyncPanelP
     }
   }, []);
 
-  const fetchPreview = useCallback(async () => {
-    setIsPreviewLoading(true);
+  const executeSync = useCallback(async () => {
+    const [year, monthPart] = month.split("-");
+    const label = `${year}年${parseInt(monthPart, 10)}月`;
+
+    if (!window.confirm(`${label}を反映しますか？`)) {
+      return;
+    }
+
+    setIsSyncing(true);
     setError(null);
-    setPreview(null);
+    setStatusMessage(null);
     setResults(null);
 
     const payload = summaries.map((s) => ({
@@ -75,41 +62,11 @@ export function SpreadsheetSyncPanel({ month, summaries }: SpreadsheetSyncPanelP
       workMinutes: s.workMinutes,
       overtimeMinutes: s.overtimeMinutes,
       nightMinutes: s.nightMinutes,
-    }));
-
-    try {
-      const res = await fetch("/api/sheets/preview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ summaries: payload }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "プレビュー取得に失敗しました");
-        return;
-      }
-      setPreview(data.preview);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsPreviewLoading(false);
-    }
-  }, [summaries]);
-
-  const executeSync = useCallback(async () => {
-    if (!window.confirm(`${month}月分のデータをスプレッドシートに反映しますか？\n※ 既存の値が上書きされます。`)) {
-      return;
-    }
-
-    setIsSyncing(true);
-    setError(null);
-
-    const payload = summaries.map((s) => ({
-      staffName: s.staffName,
-      workDays: s.workDays,
-      workMinutes: s.workMinutes,
-      overtimeMinutes: s.overtimeMinutes,
-      nightMinutes: s.nightMinutes,
+      allowanceMinutes: s.allowanceMinutes,
+      basePay: s.basePay,
+      overtimePay: s.overtimePay,
+      transportationAllowance: s.transportationAllowance,
+      holidayAllowance: s.allowancePay,
     }));
 
     try {
@@ -126,6 +83,14 @@ export function SpreadsheetSyncPanel({ month, summaries }: SpreadsheetSyncPanelP
 
       setResults(data.results);
 
+      const hasFailure = data.results.some((r: SyncResultItem) => !r.success);
+      if (hasFailure) {
+        setStatusMessage(null);
+        setError("一部のスタッフで反映に失敗しました。設定をご確認ください。");
+      } else {
+        setStatusMessage("反映完了しました");
+      }
+
       // 履歴保存
       const entry = {
         id: crypto.randomUUID(),
@@ -136,7 +101,8 @@ export function SpreadsheetSyncPanel({ month, summaries }: SpreadsheetSyncPanelP
       saveSyncHistory(entry);
       setHistory(loadSyncHistory());
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError("反映に失敗しました。時間をおいて再度お試しください。");
+      console.error("[SpreadsheetSync] sync error", err);
     } finally {
       setIsSyncing(false);
     }
@@ -176,61 +142,24 @@ export function SpreadsheetSyncPanel({ month, summaries }: SpreadsheetSyncPanelP
 
       <div className="mt-4 flex gap-2">
         <button
-          onClick={fetchPreview}
-          disabled={isPreviewLoading}
-          className="rounded-full bg-[#6d4c41] px-6 py-2 text-sm font-bold text-white disabled:opacity-50"
-        >
-          {isPreviewLoading ? "プレビュー取得中..." : "プレビューを表示"}
-        </button>
-        <button
           onClick={executeSync}
-          disabled={isSyncing || !preview}
-          className="rounded-full bg-[#d84315] px-6 py-2 text-sm font-bold text-white disabled:opacity-50"
+          disabled={isSyncing}
+          className="rounded-full bg-[#6d4c41] px-6 py-2 text-sm font-bold text-white disabled:opacity-50"
         >
           {isSyncing ? "反映中..." : "スプレッドシートへ反映"}
         </button>
       </div>
 
+      {statusMessage && (
+        <div className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+          {statusMessage}
+        </div>
+      )}
+
       {error && (
         <div className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
           <p className="font-bold">エラー</p>
           <p>{error}</p>
-        </div>
-      )}
-
-      {preview && !results && (
-        <div className="mt-5">
-          <p className="mb-2 text-sm font-semibold text-[#6d4c41]">反映プレビュー：{month}月</p>
-          <div className="overflow-x-auto rounded-2xl border border-slate-200">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-slate-600">
-                <tr>
-                  <th className="px-4 py-3 text-left">スタッフ</th>
-                  <th className="px-4 py-3 text-left">項目</th>
-                  <th className="px-4 py-3 text-right">セル</th>
-                  <th className="px-4 py-3 text-right">現在の値</th>
-                  <th className="px-4 py-3 text-right">→ 新しい値</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {preview.map((item) =>
-                  item.fields.map((field, fIdx) => (
-                    <tr key={`${item.staffName}-${field.key}`} className={fIdx % 2 === 0 ? "bg-white" : "bg-slate-50/50"}>
-                      {fIdx === 0 && (
-                        <td rowSpan={item.fields.length} className="px-4 py-3 font-bold align-top">
-                          {item.staffName}
-                        </td>
-                      )}
-                      <td className="px-4 py-3">{fieldLabels[field.key] || field.key}</td>
-                      <td className="px-4 py-3 text-right font-mono text-xs text-slate-500">{field.cell}</td>
-                      <td className="px-4 py-3 text-right text-slate-500">{field.currentValue ?? "(空)"}</td>
-                      <td className="px-4 py-3 text-right font-bold text-[#d84315]">{field.newValue}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
         </div>
       )}
 
@@ -249,10 +178,7 @@ export function SpreadsheetSyncPanel({ month, summaries }: SpreadsheetSyncPanelP
                     {r.success ? "成功" : "失敗"}
                   </span>
                 </div>
-                {r.success && (
-                  <p className="mt-1 text-xs text-green-700">更新セル: {r.updatedCells.join(", ")}</p>
-                )}
-                {r.error && <p className="mt-1 text-xs text-red-700">{r.error}</p>}
+                {r.error && <p className="mt-1 text-xs text-red-700">反映できませんでした。設定をご確認ください。</p>}
               </div>
             ))}
           </div>
