@@ -54,95 +54,114 @@ npm run lint
 
 データベース連携を使用する場合、`.env.example` を参考に環境変数を設定してください。
 
-## Google Sheets API 連携設定（給与明細自動反映）
+## Google Apps Script 連携設定（給与明細自動反映）
 
-勤怠システムで集計した月次データを、既存のGoogleスプレッドシート「給与明細」へ自動反映する機能です。
+勤怠システムで集計した月次データを、Google Apps Script（GAS）製の Web App を経由して「給与明細」スプレッドシートへ書き込みます。サービスアカウントは不要です。
 
-### 事前準備：Google Cloud での設定
+### 1. スプレッドシートにバインドした Apps Script を作成
 
-#### 1. Google Cloud プロジェクトを作成
+1. 対象となるスプレッドシート（テスト用URL：<https://docs.google.com/spreadsheets/d/1DeQdS71jVkWd69u1Yb2xDzxZRgQ02klkIgkLEdZ0JtM/edit>）を開く
+2. 上部メニューから **拡張機能 > Apps Script** を開き、スクリプトエディタを起動
+3. `Code.gs` に以下のコードを貼り付ける
 
-1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
-2. プロジェクトを新規作成（または既存プロジェクトを使用）
-3. プロジェクトIDをメモしておく
+```javascript
+const SECRET_TOKEN = PropertiesService.getScriptProperties().getProperty('SYNC_TOKEN'); // 任意
 
-#### 2. Google Sheets API を有効化
+function doPost(e) {
+  const result = handleRequest(e);
+  return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+}
 
-1. [APIライブラリ](https://console.cloud.google.com/apis/library) を開く
-2. 「Google Sheets API」と検索
-3. 「Google Sheets API」を選択 → 「有効にする」をクリック
+function handleRequest(e) {
+  try {
+    const data = JSON.parse(e.postData.contents || '{}');
+    const action = data.action;
+    const token = data.token;
+    const payload = data.payload || {};
 
-#### 3. サービスアカウントを作成
+    if (SECRET_TOKEN && token !== SECRET_TOKEN) {
+      return { success: false, error: 'invalid token' };
+    }
 
-1. [IAMと管理 > サービスアカウント](https://console.cloud.google.com/iam-admin/serviceaccounts) を開く
-2. 「サービスアカウントを作成」をクリック
-3. 以下を入力：
-   - サービスアカウント名：`attendance-sheets-sync`
-   - サービスアカウントID：自動入力される
-   - 説明：`勤怠システムから給与明細スプレッドシートへの連携用`
-4. 「作成して続行」をクリック
-5. ロールの選択は「基本的な役割」→「閲覧者」を選択（後で変更します）
-6. 「完了」をクリック
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Sheet1');
+    if (!sheet) {
+      return { success: false, error: 'シート Sheet1 が見つかりません' };
+    }
 
-#### 4. キーを作成（JSON）
+    if (action === 'test') {
+      return { success: true, staffNames: [] };
+    }
 
-1. 作成したサービスアカウントの行をクリック
-2. 「キー」タブを開く
-3. 「キーを追加」→「新しいキーを作成」を選択
-4. タイプは「JSON」を選択
-5. 「作成」をクリック
-6. JSONファイルが自動ダウンロードされます（`******-******-******.json`）
-7. **このファイルは大切に保管してください。紛失した場合は再作成が必要です。**
+    const items = payload.items || [];
 
-#### 5. スプレッドシートへの権限付与
+    if (action === 'preview') {
+      const preview = items.map((item) => ({
+        staffName: item.staffName,
+        fields: item.fields.map((field) => ({
+          key: field.key,
+          cell: field.cell,
+          currentValue: sheet.getRange(field.cell).getDisplayValue(),
+          newValue: field.newValue,
+        })),
+      }));
+      return { success: true, preview };
+    }
 
-1. JSONキーファイルをテキストエディタで開く
-2. `client_email` の値をコピー（例：`attendance-sheets-sync@your-project.iam.gserviceaccount.com`）
-3. [給与明細スプレッドシート](https://docs.google.com/spreadsheets/d/1DeQdS71jVkWd69u1Yb2xDzxZRgQ02klkIgkLEdZ0JtM/edit) を開く
-4. 「共有」ボタンをクリック
-5. コピーしたメールアドレスを貼り付け
-6. 権限は「編集者」を選択
-7. 「完了」をクリック
+    if (action === 'sync') {
+      const results = items.map((item) => {
+        try {
+          item.fields.forEach((field) => {
+            sheet.getRange(field.cell).setValue(field.newValue);
+          });
+          return { staffName: item.staffName, success: true, updatedCells: item.fields.map((f) => f.cell) };
+        } catch (error) {
+          return { staffName: item.staffName, success: false, updatedCells: [], error: String(error) };
+        }
+      });
+      return { success: true, results };
+    }
 
-### 環境変数の設定
-
-1. リポジトリの `.env.local` を開く（ない場合は新規作成）
-2. JSONキーファイルの中身を確認し、以下の値を `.env.local` に記入：
-
-```bash
-# Google Sheets API（給与明細連携用）
-# JSONキーファイル内の "client_email" の値
-GOOGLE_SHEETS_CLIENT_EMAIL=attendance-sheets-sync@your-project.iam.gserviceaccount.com
-
-# JSONキーファイル内の "private_key" の値（-----BEGIN PRIVATE KEY----- から -----END PRIVATE KEY-----\n まで）
-# 改行は \n に置き換えて1行で記入するか、ダブルクォートで囲んで改行をそのまま入れる
-GOOGLE_SHEETS_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC...\n-----END PRIVATE KEY-----\n"
-
-# スプレッドシートID（URLの /d/ と /edit の間の文字列）
-GOOGLE_SHEETS_SPREADSHEET_ID=1DeQdS71jVkWd69u1Yb2xDzxZRgQ02klkIgkLEdZ0JtM
-
-# シート名（デフォルトは Sheet1）
-GOOGLE_SHEETS_SHEET_NAME=Sheet1
-```
-
-**JSONキーの値の入れ方の詳細：**
-
-JSONキーファイルをテキストエディタで開くと、以下のような構造になっています：
-
-```json
-{
-  "type": "service_account",
-  "project_id": "your-project-id",
-  "private_key_id": "***",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\n",
-  "client_email": "attendance-sheets-sync@your-project.iam.gserviceaccount.com",
-  ...
+    return { success: false, error: 'unsupported action' };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
 }
 ```
 
-- `private_key` の値を `.env.local` の `GOOGLE_SHEETS_PRIVATE_KEY` に設定
-- 改行コード `\n` は必ずエスケープされた状態（`\n`）で保持するか、実際の改行を含める場合はダブルクォート `"` で囲む
-- 先頭の `-----BEGIN PRIVATE KEY-----` から末尾の `-----END PRIVATE KEY-----\n` までを含める
+> シート名が `Sheet1` 以外の場合は、`getSheetByName` の引数を変更してください。
+
+### 2. （任意）APIトークンを設定
+
+セキュリティ強化のため、Apps Script の **スクリプトプロパティ** に `SYNC_TOKEN` を設定できます。
+
+1. Apps Script 画面で **歯車アイコン > プロジェクトのプロパティ** を開く
+2. **スクリプトのプロパティ** タブで `SYNC_TOKEN` を追加し、任意のランダム文字列を設定
+3. `.env.local` と Vercel に同じ値を `GOOGLE_APPS_SCRIPT_WEB_APP_TOKEN` として保存
+
+### 3. Web App としてデプロイ
+
+1. Apps Script 画面右上の **デプロイ > 新しいデプロイ** を選択
+2. 種類は **ウェブアプリ**
+3. 説明を入力（例：`attendance-sync`）
+4. **実行するアプリケーション**: 自分
+5. **アクセスできるユーザー**: 「全員（匿名ユーザーを含む）」
+6. **デプロイ** をクリックし、表示された URL をコピー（例：`https://script.google.com/macros/s/.../exec`）
+
+### 4. `.env.local` に環境変数を設定
+
+```bash
+# Google Apps Script Web App のURL
+GOOGLE_APPS_SCRIPT_WEB_APP_URL=https://script.google.com/macros/s/your-web-app-id/exec
+
+# Apps Script 側で SYNC_TOKEN を設定した場合のみ
+GOOGLE_APPS_SCRIPT_WEB_APP_TOKEN=your-optional-secret-token
+```
+
+保存後、開発サーバーを再起動してください。
+
+### 5. Vercel にも同じ環境変数を設定
+
+Vercel のダッシュボード > **Settings > Environment Variables** で上記2つのキーを Production / Preview / Development それぞれに登録し、再デプロイします。
 
 ### 連携機能の使い方
 

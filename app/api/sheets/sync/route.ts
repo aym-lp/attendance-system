@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     locks.set(lockKey, true);
 
     try {
-      const results = await syncToSpreadsheet(summaries);
+      const results = await syncToSpreadsheet(summaries, month);
       return NextResponse.json({ results, month });
     } finally {
       locks.delete(lockKey);
