@@ -68,9 +68,30 @@ Supabase の環境変数が設定されていない場合は、従来どおり�
 
 1. [Supabase](https://supabase.com/) で新しいプロジェクトを作成
 2. プロジェクトの SQL Editor で [`supabase/schema.sql`](./supabase/schema.sql) を実行し、必要なテーブル・トリガーを作成
-3. **Database > Replication > Realtime** で `staff` / `attendance_records` / `allowances` / `correction_histories` テーブルを購読対象に追加
-4. プロジェクト設定から `URL` と `anon` キーを取得して `.env.local` に設定
-5. Vercel など本番環境にも同じ値を登録
+3. 続けて [`supabase/policies.sql`](./supabase/policies.sql) を実行し、RLS（Row Level Security）ポリシーを設定
+4. **Database > Replication > Realtime** で `staff` / `attendance_records` / `allowances` / `correction_histories` テーブルを購読対象に追加
+5. プロジェクト設定から `URL` と `anon` キーを取得して `.env.local` に設定
+6. Vercel など本番環境にも同じ値を登録
+
+初期管理者を追加する場合は、以下のような SQL を Supabase の SQL Editor で実行してください（PIN は任意で変更可能）。
+
+```sql
+insert into public.staff (
+  id, name, kana, pin, role,
+  hourly_wage, transportation_allowance, memo, is_active
+)
+values (
+  gen_random_uuid(),
+  '細田径弘',
+  'ホソダミチヒロ',
+  '9999',
+  'admin',
+  1200,
+  0,
+  'クラウド移行初期データ',
+  true
+);
+```
 
 Supabase を有効化すると、出勤・退勤などの打刻がリアルタイムでクラウドに保存され、複数端末間で自動同期されます。
 
