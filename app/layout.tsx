@@ -17,17 +17,21 @@ const description = "小川珈琲和泉府中店 勤怠管理システム";
 const iconVersion = "20260527";
 const coffeeIcon = `/coffee-img.png?v=${iconVersion}` as const;
 const faviconIcon = `/favicon.ico?v=${iconVersion}` as const;
+const ogpImage = `/ogp-img.PNG?v=${iconVersion}` as const;
 
 export const metadata: Metadata = {
   title,
   description,
   openGraph: {
+    type: "website",
     title,
     description,
     images: [
       {
-        url: coffeeIcon,
+        url: ogpImage,
         alt: title,
+        width: 1734,
+        height: 907,
       },
     ],
   },
@@ -35,7 +39,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title,
     description,
-    images: [coffeeIcon],
+    images: [ogpImage],
   },
   icons: {
     icon: [
