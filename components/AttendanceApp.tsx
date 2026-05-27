@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Allowance, AttendanceRecord, CorrectionField, CorrectionHistory, Staff } from "@/lib/types";
 import { buildMonthlySummary, createEmptyRecord, getTodayKey, recordsToCsv } from "@/lib/time";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -10,6 +10,7 @@ import { AttendanceCard } from "@/components/AttendanceCard";
 import { LoginPanel } from "@/components/LoginPanel";
 
 const seedData = generateSeedData();
+const seedMonths = Array.from(new Set(seedData.records.map((record) => record.workDate.slice(0, 7)))).sort().reverse();
 
 export function AttendanceApp() {
   const [pin, setPin] = useState("");
@@ -19,7 +20,19 @@ export function AttendanceApp() {
   const [correctionHistories, setCorrectionHistories] = useState<CorrectionHistory[]>(seedData.histories);
   const [allowances, setAllowances] = useState<Allowance[]>(seedData.allowances ?? []);
   const [message, setMessage] = useState("PINを入力してください");
-  const [selectedMonth, setSelectedMonth] = useState(getTodayKey().slice(0, 7));
+  const [selectedMonth, setSelectedMonth] = useState(() => seedMonths[0] ?? getTodayKey().slice(0, 7));
+
+  const availableMonths = useMemo(() => {
+    const months = new Set(records.map((record) => record.workDate.slice(0, 7)));
+    return Array.from(months).sort().reverse();
+  }, [records]);
+
+  useEffect(() => {
+    if (availableMonths.length === 0) return;
+    if (!availableMonths.includes(selectedMonth)) {
+      setSelectedMonth(availableMonths[0]);
+    }
+  }, [availableMonths, selectedMonth]);
 
   const currentRecord = useMemo(() => {
     if (!currentStaff) return null;

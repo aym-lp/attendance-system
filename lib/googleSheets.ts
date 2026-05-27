@@ -1,11 +1,19 @@
 import "server-only";
 
 function getAppsScriptUrl(): string {
-  return (process.env.GOOGLE_APPS_SCRIPT_WEB_APP_URL ?? "").trim();
+  const value =
+    process.env.GOOGLE_APPS_SCRIPT_WEB_APP_URL ??
+    process.env.NEXT_PUBLIC_GOOGLE_APPS_SCRIPT_WEB_APP_URL ??
+    "";
+  return value.trim();
 }
 
 function getAppsScriptToken(): string {
-  return (process.env.GOOGLE_APPS_SCRIPT_WEB_APP_TOKEN ?? "").trim();
+  const value =
+    process.env.GOOGLE_APPS_SCRIPT_WEB_APP_TOKEN ??
+    process.env.NEXT_PUBLIC_GOOGLE_APPS_SCRIPT_WEB_APP_TOKEN ??
+    "";
+  return value.trim();
 }
 
 // スプレッドシート構造定義：スタッフ名セルを基準に各データセルの相対位置
