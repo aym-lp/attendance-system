@@ -1,5 +1,5 @@
-const APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_WEB_APP_URL ?? "";
-const APPS_SCRIPT_TOKEN = process.env.GOOGLE_APPS_SCRIPT_WEB_APP_TOKEN ?? "";
+const APPS_SCRIPT_URL = (process.env.GOOGLE_APPS_SCRIPT_WEB_APP_URL ?? "").trim();
+const APPS_SCRIPT_TOKEN = (process.env.GOOGLE_APPS_SCRIPT_WEB_APP_TOKEN ?? "").trim();
 
 // スプレッドシート構造定義：スタッフ名セルを基準に各データセルの相対位置
 const STAFF_LAYOUT = {
@@ -61,6 +61,7 @@ async function callAppsScript<T>(action: string, payload: Record<string, unknown
   const response = await fetch(APPS_SCRIPT_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    redirect: "follow",
     body: JSON.stringify({ action, token: APPS_SCRIPT_TOKEN || undefined, payload }),
   });
 
@@ -68,9 +69,11 @@ async function callAppsScript<T>(action: string, payload: Record<string, unknown
 
   let data: any;
   try {
-    data = text ? JSON.parse(text) : {};
+    const isJson = response.headers.get("content-type")?.includes("application/json");
+    data = isJson && text ? JSON.parse(text) : text ? JSON.parse(text) : {};
   } catch (error) {
-    throw new Error(`Google Apps Script の応答をJSONとして解析できませんでした: ${text}`);
+    const snippet = text.length > 200 ? `${text.slice(0, 200)}...` : text;
+    throw new Error(`Google Apps Script の応答をJSONとして解析できませんでした。Web App の公開設定（誰でもアクセス可能）とレスポンス内容を確認してください。受信データ: ${snippet}`);
   }
 
   if (!response.ok || data?.success === false) {
