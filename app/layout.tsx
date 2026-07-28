@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 
 const title = "勤怠管理システム";
 const description = "小川珈琲和泉府中店 勤怠管理システム";
-const iconVersion = "20260527";
+const iconVersion = "20260527-2";
 const coffeeIcon = `/coffee-img.png?v=${iconVersion}` as const;
-const faviconIcon = `/favicon.ico?v=${iconVersion}` as const;
+const faviconIcon = `/favicon.icon.png?v=${iconVersion}` as const;
 const ogpImage = `/ogp-img.PNG?v=${iconVersion}` as const;
 
 export const metadata: Metadata = {
@@ -42,12 +42,7 @@ export const metadata: Metadata = {
     images: [ogpImage],
   },
   icons: {
-    icon: [
-      { url: coffeeIcon, type: "image/png" },
-      { url: faviconIcon, rel: "icon", type: "image/x-icon" },
-    ],
-    shortcut: [{ url: coffeeIcon }],
-    apple: [{ url: coffeeIcon, sizes: "180x180", type: "image/png" }],
+    icon: "/favicon.icon.png",
   },
 };
 

@@ -249,9 +249,13 @@ export async function upsertAttendanceRecord(record: AttendanceRecord): Promise<
 }
 
 export async function upsertStaff(staff: Staff): Promise<Staff> {
+  console.log("[upsertStaff] before insert - staff:", staff);
   const client = requireSupabase();
   const payload = toStaffRow(staff);
+  console.log("[upsertStaff] payload:", payload);
   const { data, error } = await client.from("staff").upsert(payload, { onConflict: "id" }).select(STAFF_COLUMNS).single();
+  console.log("[upsertStaff] after insert - data:", data);
+  console.log("[upsertStaff] after insert - error:", error);
   if (error || !data) {
     throw new Error(`スタッフ情報の保存に失敗しました: ${error?.message ?? "未知のエラー"}`);
   }

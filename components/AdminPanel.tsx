@@ -398,6 +398,9 @@ function StaffRegistrationPanel({ onAddStaff, onClose }: { onAddStaff: AdminPane
   const [error, setError] = useState("");
 
   const submit = () => {
+    console.log("[StaffRegistrationPanel] submit が呼ばれました");
+    console.log("[StaffRegistrationPanel] 入力値:", { name, kana, pin, role, hourlyWage, transportationAllowance, memo });
+
     if (!name.trim() || !kana.trim()) {
       setError("氏名とフリガナを入力してください");
       return;
@@ -407,7 +410,7 @@ function StaffRegistrationPanel({ onAddStaff, onClose }: { onAddStaff: AdminPane
       return;
     }
 
-    onAddStaff({
+    const staffData = {
       name: name.trim(),
       kana: kana.trim(),
       pin,
@@ -415,7 +418,11 @@ function StaffRegistrationPanel({ onAddStaff, onClose }: { onAddStaff: AdminPane
       hourlyWage: Number(hourlyWage) || 0,
       transportationAllowance: Number(transportationAllowance) || 0,
       memo: memo.trim(),
-    });
+    };
+
+    console.log("[StaffRegistrationPanel] onAddStaff を呼び出します:", staffData);
+    onAddStaff(staffData);
+
     setName("");
     setKana("");
     setPin("");

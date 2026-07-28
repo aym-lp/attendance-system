@@ -30,6 +30,8 @@ const seedMonths = Array.from(new Set(seedData.records.map((record) => record.wo
 export function AttendanceApp() {
   const cloudEnabled = isSupabaseConfigured;
 
+  console.log("[AttendanceApp] cloudEnabled:", cloudEnabled);
+
   const persistedData = !cloudEnabled ? loadPersistedData() : null;
 
   const [pin, setPin] = useState("");
@@ -330,19 +332,28 @@ export function AttendanceApp() {
         isActive: true,
       };
 
+      console.log("[スタッフ追加] cloudEnabled:", cloudEnabled);
+      console.log("[スタッフ追加] 追加するスタッフ:", newStaff);
+
       setStaffList((prev) => [...prev, newStaff]);
       setMessage(`${newStaff.name}さんを登録しました`);
 
       if (cloudEnabled) {
         void (async () => {
           try {
+            console.log("[スタッフ追加] Supabase に保存開始...");
             await upsertStaff(newStaff);
+            console.log("[スタッフ追加] Supabase に保存成功");
             setCloudError(null);
           } catch (error) {
+            console.error("[スタッフ追加] Supabase 保存失敗:", error);
             handleCloudError(error, "スタッフ情報の保存に失敗しました");
             await refreshStaff();
           }
         })();
+      } else {
+        console.warn("[スタッフ追加] cloudEnabled が false なので Supabase に保存しません（localStorage モード）");
+        console.warn("[スタッフ追加] Supabase を使用するには環境変数 NEXT_PUBLIC_SUPABASE_URL と NEXT_PUBLIC_SUPABASE_ANON_KEY を設定してください");
       }
     },
     [cloudEnabled, handleCloudError, refreshStaff],
