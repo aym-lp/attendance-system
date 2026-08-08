@@ -383,7 +383,7 @@ export function AttendanceApp() {
   );
 
   const updateAttendanceRecord = useCallback(
-    (recordId: string, values: Pick<AttendanceRecord, CorrectionField>) => {
+    (recordId: string, values: Partial<Pick<AttendanceRecord, CorrectionField>>) => {
       if (!currentStaff) return;
 
       const updatedRecords = recordsRef.current.map((record) => {
@@ -391,8 +391,7 @@ export function AttendanceApp() {
 
         const fields: CorrectionField[] = ["clockIn", "clockOut", "breakStart", "breakEnd"];
         const histories: CorrectionHistory[] = fields
-          .filter((field) => record[field] !== values[field])
-          .filter((field) => values[field] !== null && values[field] !== undefined && values[field] !== "")
+          .filter((field) => values[field] !== undefined && values[field] !== null && values[field] !== "" && record[field] !== values[field])
           .map((field) => ({
             id: crypto.randomUUID(),
             recordId: record.id,
@@ -401,7 +400,7 @@ export function AttendanceApp() {
             workDate: record.workDate,
             field,
             beforeValue: record[field],
-            afterValue: values[field],
+            afterValue: values[field]!,
             correctedBy: currentStaff.name,
             correctedAt: new Date().toISOString(),
             reason: "",
