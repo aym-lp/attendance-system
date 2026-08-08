@@ -49,8 +49,9 @@ export function calculateRecordPayroll(record: AttendanceRecord, staff: Staff | 
 
   const clockOutTime = parseTime(record.clockOut);
   const referenceTime = clockOutTime ?? now;
-  const workMinutes = record.workMinutes || getWorkedMinutes(record, referenceTime);
-  const overtimeMinutes = record.overtimeMinutes || getOvertimeMinutes(record, referenceTime);
+  const { rounded: roundedBreakMinutes } = roundUpBreakMinutes(record.totalBreakMinutes);
+  const workMinutes = record.workMinutes || getWorkedMinutesWithRoundedBreak(record, referenceTime, roundedBreakMinutes);
+  const overtimeMinutes = record.overtimeMinutes || getOvertimeMinutesWithRoundedBreak(record, referenceTime, roundedBreakMinutes);
   const nightMinutes = record.nightMinutes || 0;
   const baseMinutes = Math.max(0, workMinutes - overtimeMinutes);
   const allowanceMinutes = allowanceHourlyAddition > 0 ? workMinutes : 0;
@@ -134,8 +135,33 @@ export function getWorkedMinutes(record: AttendanceRecord, now = new Date()) {
   return Math.max(0, gross - record.totalBreakMinutes - currentBreak);
 }
 
+export function getWorkedMinutesWithRoundedBreak(record: AttendanceRecord, now = new Date(), roundedBreakMinutes: number) {
+  if (!record.clockIn) return 0;
+
+  const rawStart = parseTime(record.clockIn);
+  if (!rawStart) return 0;
+  const start = roundUpTo15Minutes(rawStart).getTime();
+
+  let end: number;
+  if (record.clockOut) {
+    const rawEnd = parseTime(record.clockOut);
+    end = rawEnd ? roundDownTo15Minutes(rawEnd).getTime() : now.getTime();
+  } else {
+    end = now.getTime();
+  }
+
+  const currentBreak = record.breakStart && !record.breakEnd ? Math.max(0, now.getTime() - (parseTime(record.breakStart)?.getTime() ?? now.getTime())) / 60000 : 0;
+  const gross = Math.max(0, (end - start) / 60000);
+
+  return Math.max(0, gross - roundedBreakMinutes - currentBreak);
+}
+
 export function getOvertimeMinutes(record: AttendanceRecord, now = new Date()) {
   return Math.max(0, getWorkedMinutes(record, now) - STANDARD_WORK_MINUTES);
+}
+
+export function getOvertimeMinutesWithRoundedBreak(record: AttendanceRecord, now = new Date(), roundedBreakMinutes: number) {
+  return Math.max(0, getWorkedMinutesWithRoundedBreak(record, now, roundedBreakMinutes) - STANDARD_WORK_MINUTES);
 }
 
 export function createEmptyRecord(staff: Staff, now = new Date()): AttendanceRecord {

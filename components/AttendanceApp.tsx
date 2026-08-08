@@ -11,6 +11,7 @@ import { LoginPanel } from "@/components/LoginPanel";
 import { loadPersistedData, savePersistedData } from "@/lib/localStorage";
 import {
   deleteAllowance as deleteAllowanceCloud,
+  deleteStaff as deleteStaffCloud,
   fetchAllowances,
   fetchAttendanceRecords,
   fetchAttendanceSnapshot,
@@ -133,6 +134,8 @@ export function AttendanceApp() {
     setMessage("クラウドデータを読み込み中...");
     try {
       const snapshot = await fetchAttendanceSnapshot();
+      console.log("[Snapshot staff]", snapshot.staff);
+      console.log("[Snapshot staff count]", snapshot.staff.length);
       setStaffList(snapshot.staff);
       setRecords(snapshot.records);
       setAllowances(snapshot.allowances);
@@ -511,6 +514,22 @@ export function AttendanceApp() {
               onExportCsv={exportCsv}
               onAddStaff={addStaff}
               onUpdateStaff={updateStaff}
+              onDeleteStaff={(id) => {
+                setStaffList((prev) => prev.filter((item) => item.id !== id));
+                setMessage("スタッフを削除しました");
+
+                if (cloudEnabled) {
+                  void (async () => {
+                    try {
+                      await deleteStaffCloud(id);
+                      setCloudError(null);
+                    } catch (error) {
+                      handleCloudError(error, "スタッフの削除に失敗しました");
+                      await refreshStaff();
+                    }
+                  })();
+                }
+              }}
               onUpdateRecord={updateAttendanceRecord}
               onCreateRecord={createAttendanceRecord}
               onAddAllowance={(allowance) => {

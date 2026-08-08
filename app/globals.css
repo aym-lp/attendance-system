@@ -18,15 +18,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #1a1512;
-    --foreground: #efebe9;
-    --brown-primary: #8d6e63;
-    --brown-secondary: #a1887f;
-    --brown-light: #4e342e;
-  }
-}
+/* ダークモードを無効化 - システム設定の影響を受けないようにする */
 
 body {
   background: var(--background);

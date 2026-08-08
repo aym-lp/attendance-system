@@ -27,13 +27,14 @@ type AdminPanelProps = {
   onExportCsv: (staffId: string, month: string) => void;
   onAddStaff: (staff: Omit<Staff, "id" | "isActive">) => void;
   onUpdateStaff: (id: string, staff: Partial<Omit<Staff, "id" | "isActive">>) => void;
+  onDeleteStaff: (id: string) => void;
   onUpdateRecord: (recordId: string, values: Pick<AttendanceRecord, CorrectionField>) => void;
   onCreateRecord: (record: Omit<AttendanceRecord, "workMinutes" | "overtimeMinutes" | "nightMinutes">) => void;
   onAddAllowance: (allowance: Omit<Allowance, "id">) => void;
   onDeleteAllowance: (id: string) => void;
 };
 
-function StaffDetailPanel({ staff, onUpdateStaff }: { staff: Staff; onUpdateStaff: AdminPanelProps["onUpdateStaff"] }) {
+function StaffDetailPanel({ staff, onUpdateStaff, onDeleteStaff }: { staff: Staff; onUpdateStaff: AdminPanelProps["onUpdateStaff"]; onDeleteStaff: AdminPanelProps["onDeleteStaff"] }) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(staff.name);
   const [kana, setKana] = useState(staff.kana);
@@ -135,14 +136,17 @@ function StaffDetailPanel({ staff, onUpdateStaff }: { staff: Staff; onUpdateStaf
               <p className="font-bold">{staff.memo}</p>
             </div>
           )}
-          <button onClick={() => setIsEditing(true)} className="min-h-12 w-full rounded-2xl bg-[#6d4c41] px-6 font-bold text-white">編集</button>
+          <div className="flex gap-2">
+            <button onClick={() => setIsEditing(true)} className="min-h-12 flex-1 rounded-2xl bg-[#6d4c41] px-6 font-bold text-white">編集</button>
+            <button onClick={() => onDeleteStaff(staff.id)} className="min-h-12 flex-1 rounded-2xl bg-red-600 px-6 font-bold text-white">削除</button>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-export function AdminPanel({ isAdmin, currentStaff, staffList, records, correctionHistories, selectedMonth, monthlySummary, allowances, onMonthChange, onExportCsv, onAddStaff, onUpdateStaff, onUpdateRecord, onCreateRecord, onAddAllowance, onDeleteAllowance }: AdminPanelProps) {
+export function AdminPanel({ isAdmin, currentStaff, staffList, records, correctionHistories, selectedMonth, monthlySummary, allowances, onMonthChange, onExportCsv, onAddStaff, onUpdateStaff, onDeleteStaff, onUpdateRecord, onCreateRecord, onAddAllowance, onDeleteAllowance }: AdminPanelProps) {
   const [currentView, setCurrentView] = useState<"menu" | "staff" | "history" | "correction" | "correctionHistory" | "monthly" | "allowance">("menu");
   const [historyStaffId, setHistoryStaffId] = useState("all");
   const [historyMonth, setHistoryMonth] = useState(selectedMonth);
@@ -333,7 +337,7 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
               <h2 className="text-2xl font-bold">スタッフ詳細</h2>
               <button onClick={() => setSelectedStaff(null)} className="rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">✕</button>
             </div>
-            <StaffDetailPanel staff={selectedStaff} onUpdateStaff={onUpdateStaff} />
+            <StaffDetailPanel staff={selectedStaff} onUpdateStaff={onUpdateStaff} onDeleteStaff={onDeleteStaff} />
           </div>
         </div>
       )}
@@ -512,12 +516,23 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
       return;
     }
     if (!targetRecord) return;
-    onUpdateRecord(targetRecord.id, {
-      clockIn: toDateTimeValue(targetRecord.workDate, values.clockIn),
-      clockOut: toDateTimeValue(targetRecord.workDate, values.clockOut),
-      breakStart: toDateTimeValue(targetRecord.workDate, values.breakStart),
-      breakEnd: toDateTimeValue(targetRecord.workDate, values.breakEnd),
-    });
+
+    // 修正対象フィールドのみを更新（部分的なPATCH）
+    const updateData: Partial<Pick<AttendanceRecord, CorrectionField>> = {};
+    if (selectedField === "clockIn" || values.clockIn) {
+      updateData.clockIn = toDateTimeValue(targetRecord.workDate, values.clockIn);
+    }
+    if (selectedField === "clockOut" || values.clockOut) {
+      updateData.clockOut = toDateTimeValue(targetRecord.workDate, values.clockOut);
+    }
+    if (selectedField === "breakStart" || values.breakStart) {
+      updateData.breakStart = toDateTimeValue(targetRecord.workDate, values.breakStart);
+    }
+    if (selectedField === "breakEnd" || values.breakEnd) {
+      updateData.breakEnd = toDateTimeValue(targetRecord.workDate, values.breakEnd);
+    }
+
+    onUpdateRecord(targetRecord.id, updateData);
     setSelectedRecordId("");
     setSelectedField(null);
   };
