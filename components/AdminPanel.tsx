@@ -215,19 +215,19 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
 
   return (
     <div className="space-y-5">
-      <header className="fixed inset-x-0 top-0 z-40 border-b border-[#d7ccc8] bg-[#faf8f5]/95 backdrop-blur lg:hidden">
-        <div className="relative mx-auto flex h-16 w-full max-w-7xl items-center justify-end px-4 sm:px-6">
+      <header className="pointer-events-none fixed inset-x-0 top-0 z-[60] lg:hidden">
+        <div className="relative mx-auto flex h-14 w-full max-w-7xl items-center justify-end px-4 sm:px-6 lg:px-8">
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen((current) => !current)}
             aria-expanded={isMobileMenuOpen}
             aria-label={isMobileMenuOpen ? "メニューを閉じる" : "メニューを開く"}
-            className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#d7ccc8] bg-white text-xl font-bold text-[#6d4c41] shadow-sm"
+            className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-xl border border-[#d7ccc8] bg-white text-xl font-bold text-[#6d4c41] shadow-sm"
           >
             ☰
           </button>
           {isMobileMenuOpen && (
-          <nav className="absolute inset-x-4 top-full z-40 mt-2 rounded-2xl border border-[#d7ccc8] bg-white p-2 shadow-lg sm:inset-x-6" aria-label="管理メニュー">
+          <nav className="pointer-events-auto absolute inset-x-4 top-full z-[70] mt-2 rounded-2xl border border-[#d7ccc8] bg-white p-2 shadow-lg sm:inset-x-6" aria-label="管理メニュー">
             {adminMenuItems.map((item) => (
               <button
                 key={item.view}
