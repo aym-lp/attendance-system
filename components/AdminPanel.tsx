@@ -538,7 +538,7 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
   const [values, setValues] = useState({ clockIn: "", clockOut: "", breakStart: "", breakEnd: "" });
 
   const staffRecords = selectedStaffId && selectedDate ? records.filter((r) => r.staffId === selectedStaffId && r.workDate === selectedDate) : [];
-  const targetRecord = staffRecords.find((r) => r.id === selectedRecordId) ?? staffRecords[0];
+  const targetRecord = staffRecords.find((r) => r.id === selectedRecordId) ?? null;
 
   const toTimeValue = (timeStr: string | null): string => {
     if (!timeStr) return "";
@@ -560,6 +560,10 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
     setSelectedRecordId(recordId);
     setSelectedField(null);
     const record = staffRecords.find((item) => item.id === recordId);
+    setRecordValues(record);
+  };
+
+  const setRecordValues = (record: AttendanceRecord | undefined) => {
     setValues({
       clockIn: toTimeValue(record?.clockIn ?? null),
       clockOut: toTimeValue(record?.clockOut ?? null),
@@ -569,9 +573,9 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
   };
 
   const deleteSelectedRecord = async () => {
-    if (!selectedRecordId || !targetRecord) return;
+    if (!targetRecord) return;
     const dialogDate = formatWorkDateForDialog(selectedDate);
-    if (!confirm(`${dialogDate}の選択した勤務データを削除しますか？\nこの操作は元に戻せません。`)) return;
+    if (!confirm(`${dialogDate}の勤務データを削除しますか？\nこの操作は元に戻せません。`)) return;
     try {
       await onDeleteRecord(targetRecord.id);
       setSelectedRecordId("");
@@ -647,8 +651,11 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
             <p className="mb-2 text-sm font-semibold">日付を選択</p>
             <DatePickerInput value={selectedDate} onChange={(value) => {
               setSelectedDate(value);
-              setSelectedRecordId("");
               setSelectedField(null);
+              const matchingRecords = records.filter((record) => record.staffId === selectedStaffId && record.workDate === value);
+              const singleRecord = matchingRecords.length === 1 ? matchingRecords[0] : undefined;
+              setSelectedRecordId(singleRecord?.id ?? "");
+              setRecordValues(singleRecord);
             }} />
           </div>
         )}
@@ -711,8 +718,8 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
                 {selectedField && (
                   <button onClick={submit} className="mt-4 min-h-14 w-full rounded-2xl bg-[#8d6e63] px-6 font-bold text-white">打刻を修正</button>
                 )}
-                {!isSelfMode && selectedRecordId && targetRecord && !selectedField && (
-                  <button onClick={deleteSelectedRecord} className="mt-4 min-h-12 w-full rounded-2xl bg-red-700 px-4 py-2 text-sm font-bold text-white">選択した勤務を削除</button>
+                {!isSelfMode && targetRecord && !selectedField && (
+                  <button onClick={deleteSelectedRecord} className="mt-4 min-h-12 w-full rounded-2xl bg-red-700 px-4 py-2 text-sm font-bold text-white">この日の勤務を削除</button>
                 )}
               </div>
             )}
