@@ -43,8 +43,7 @@ type AdminPanelProps = {
   onDeleteStaff: (id: string) => void;
   onUpdateRecord: (recordId: string, values: Partial<Pick<AttendanceRecord, CorrectionTimeField>>) => void;
   onCreateRecord: (record: Omit<AttendanceRecord, "workMinutes" | "overtimeMinutes" | "nightMinutes">) => void;
-  onDeleteRecord: (recordId: string) => void;
-  onDeleteDayRecords: (staffId: string, workDate: string) => Promise<void>;
+  onDeleteRecord: (recordId: string) => Promise<void>;
   onAddAllowance: (allowance: Omit<Allowance, "id">) => void;
   onDeleteAllowance: (id: string) => void;
 };
@@ -161,7 +160,7 @@ function StaffDetailPanel({ staff, onUpdateStaff, onDeleteStaff }: { staff: Staf
   );
 }
 
-export function AdminPanel({ isAdmin, currentStaff, staffList, records, correctionHistories, selectedMonth, monthlySummary, allowances, onMonthChange, onExportCsv, onAddStaff, onUpdateStaff, onDeleteStaff, onUpdateRecord, onCreateRecord, onDeleteRecord, onDeleteDayRecords, onAddAllowance, onDeleteAllowance }: AdminPanelProps) {
+export function AdminPanel({ isAdmin, currentStaff, staffList, records, correctionHistories, selectedMonth, monthlySummary, allowances, onMonthChange, onExportCsv, onAddStaff, onUpdateStaff, onDeleteStaff, onUpdateRecord, onCreateRecord, onDeleteRecord, onAddAllowance, onDeleteAllowance }: AdminPanelProps) {
   const [currentView, setCurrentView] = useState<AdminView>("menu");
   const [historyStaffId, setHistoryStaffId] = useState("all");
   const [historyMonth, setHistoryMonth] = useState(selectedMonth);
@@ -204,7 +203,6 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
             onUpdateRecord={onUpdateRecord}
             onCreateRecord={onCreateRecord}
             onDeleteRecord={onDeleteRecord}
-            onDeleteDayRecords={onDeleteDayRecords}
           />
         </div>
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
@@ -329,7 +327,7 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
           <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
           <h2 className="text-2xl font-bold">打刻修正</h2>
-          <AttendanceCorrectionPanel staffList={staffList} records={records} onUpdateRecord={onUpdateRecord} onCreateRecord={onCreateRecord} onDeleteRecord={onDeleteRecord} onDeleteDayRecords={onDeleteDayRecords} />
+          <AttendanceCorrectionPanel staffList={staffList} records={records} onUpdateRecord={onUpdateRecord} onCreateRecord={onCreateRecord} onDeleteRecord={onDeleteRecord} />
           <button onClick={() => setCurrentView("menu")} className="mt-6 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
         </div>
       )}
@@ -532,7 +530,7 @@ function StaffRegistrationPanel({ onAddStaff, onClose }: { onAddStaff: AdminPane
   );
 }
 
-function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdateRecord, onCreateRecord, onDeleteRecord, onDeleteDayRecords }: { staffList: Staff[]; records: AttendanceRecord[]; currentStaffId?: string; onUpdateRecord: AdminPanelProps["onUpdateRecord"]; onCreateRecord: AdminPanelProps["onCreateRecord"]; onDeleteRecord: AdminPanelProps["onDeleteRecord"]; onDeleteDayRecords: AdminPanelProps["onDeleteDayRecords"] }) {
+function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdateRecord, onCreateRecord, onDeleteRecord }: { staffList: Staff[]; records: AttendanceRecord[]; currentStaffId?: string; onUpdateRecord: AdminPanelProps["onUpdateRecord"]; onCreateRecord: AdminPanelProps["onCreateRecord"]; onDeleteRecord: AdminPanelProps["onDeleteRecord"] }) {
   const isSelfMode = !!currentStaffId;
   const [selectedStaffId, setSelectedStaffId] = useState(isSelfMode ? currentStaffId : "");
   const [selectedDate, setSelectedDate] = useState("");
@@ -571,12 +569,12 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
     });
   };
 
-  const deleteSelectedDayRecords = async () => {
-    if (!selectedStaffId || !selectedDate) return;
+  const deleteSelectedRecord = async () => {
+    if (!selectedRecordId || !targetRecord) return;
     const dialogDate = formatWorkDateForDialog(selectedDate);
-    if (!confirm(`${dialogDate}の勤務データを削除しますか？\nこの操作は元に戻せません。`)) return;
+    if (!confirm(`${dialogDate}の選択した勤務データを削除しますか？\nこの操作は元に戻せません。`)) return;
     try {
-      await onDeleteDayRecords(selectedStaffId, selectedDate);
+      await onDeleteRecord(targetRecord.id);
       setSelectedRecordId("");
       setSelectedField(null);
       setValues({ clockIn: "", clockOut: "", breakStart: "", breakEnd: "" });
@@ -674,7 +672,7 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
                 <p className="mb-2 text-sm font-semibold">履歴を選択</p>
                 <select value={selectedRecordId} onChange={(event) => loadRecord(event.target.value)} className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-950">
                   <option value="">履歴を選択</option>
-                  {staffRecords.map((record) => <option key={record.id} value={record.id}>{record.workDate}</option>)}
+                  {staffRecords.map((record) => <option key={record.id} value={record.id}>{record.workDate}（出勤 {formatDateTime(record.clockIn)}）</option>)}
                 </select>
                 {targetRecord && (
                   <div className="mt-4 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
@@ -714,8 +712,8 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
                 {selectedField && (
                   <button onClick={submit} className="mt-4 min-h-14 w-full rounded-2xl bg-[#8d6e63] px-6 font-bold text-white">打刻を修正</button>
                 )}
-                {!isSelfMode && targetRecord && !selectedField && (
-                  <button onClick={deleteSelectedDayRecords} className="mt-4 min-h-12 w-full rounded-2xl bg-red-700 px-4 py-2 text-sm font-bold text-white">この日の勤務を削除</button>
+                {!isSelfMode && selectedRecordId && targetRecord && !selectedField && (
+                  <button onClick={deleteSelectedRecord} className="mt-4 min-h-12 w-full rounded-2xl bg-red-700 px-4 py-2 text-sm font-bold text-white">選択した勤務を削除</button>
                 )}
               </div>
             )}
