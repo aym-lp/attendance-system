@@ -510,7 +510,7 @@ export function AttendanceApp() {
         {!currentStaff ? (
           <LoginPanel pin={pin} message={message} onPinChange={setPin} onLogin={login} />
         ) : (
-          <section className="flex flex-col gap-5">
+          <section className={`flex flex-col gap-5 ${currentStaff.role === "admin" || currentStaff.role === "manager" ? "pt-16 lg:pt-0" : ""}`}>
             <AttendanceCard
               staff={currentStaff}
               record={currentRecord}

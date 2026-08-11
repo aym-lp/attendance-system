@@ -215,21 +215,19 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
 
   return (
     <div className="space-y-5">
-      <div className="relative lg:hidden">
-        <div className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
-          <p className="font-bold text-[#6d4c41]">メニュー</p>
+      <header className="fixed inset-x-0 top-0 z-40 border-b border-[#d7ccc8] bg-[#faf8f5]/95 backdrop-blur lg:hidden">
+        <div className="relative mx-auto flex h-16 w-full max-w-7xl items-center justify-end px-4 sm:px-6">
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen((current) => !current)}
             aria-expanded={isMobileMenuOpen}
-            aria-label="メニューを開く"
-            className="rounded-xl border border-[#d7ccc8] px-3 py-2 text-xl font-bold text-[#6d4c41] shadow-sm"
+            aria-label={isMobileMenuOpen ? "メニューを閉じる" : "メニューを開く"}
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#d7ccc8] bg-white text-xl font-bold text-[#6d4c41] shadow-sm"
           >
             ☰
           </button>
-        </div>
-        {isMobileMenuOpen && (
-          <nav className="absolute inset-x-0 top-full z-40 mt-2 rounded-2xl border border-[#d7ccc8] bg-white p-2 shadow-lg" aria-label="管理メニュー">
+          {isMobileMenuOpen && (
+          <nav className="absolute inset-x-4 top-full z-40 mt-2 rounded-2xl border border-[#d7ccc8] bg-white p-2 shadow-lg sm:inset-x-6" aria-label="管理メニュー">
             {adminMenuItems.map((item) => (
               <button
                 key={item.view}
@@ -241,8 +239,9 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
               </button>
             ))}
           </nav>
-        )}
-      </div>
+          )}
+        </div>
+      </header>
       <div className={currentView === "menu" ? "" : "lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start lg:gap-5"}>
         {currentView !== "menu" && (
           <aside className="sticky top-20 hidden rounded-3xl bg-white p-3 shadow-sm lg:block">
