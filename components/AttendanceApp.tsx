@@ -291,11 +291,10 @@ export function AttendanceApp() {
   const endBreak = useCallback(async () => {
     const now = new Date().toISOString();
     const updated = await updateTodayRecord((record) => {
-      const breakMinutes = record.breakStart ? Math.max(0, (new Date(now).getTime() - new Date(record.breakStart).getTime()) / 60000) : 0;
       return {
         ...record,
         breakEnd: now,
-        totalBreakMinutes: record.totalBreakMinutes + breakMinutes,
+        totalBreakMinutes: getBreakIntervalMinutes({ breakStart: record.breakStart, breakEnd: now }),
         status: "working",
       };
     });
@@ -422,11 +421,10 @@ export function AttendanceApp() {
           }
         }
 
-        const totalBreakMinutes =
-          getBreakIntervalMinutes({
-            breakStart: values.breakStart ?? record.breakStart,
-            breakEnd: values.breakEnd ?? record.breakEnd,
-          }) || record.totalBreakMinutes;
+        const totalBreakMinutes = getBreakIntervalMinutes({
+          breakStart: values.breakStart !== undefined ? values.breakStart : record.breakStart,
+          breakEnd: values.breakEnd !== undefined ? values.breakEnd : record.breakEnd,
+        });
 
         return {
           ...record,
@@ -460,7 +458,7 @@ export function AttendanceApp() {
 
   const createAttendanceRecord = useCallback(
     (record: Omit<AttendanceRecord, "workMinutes" | "overtimeMinutes" | "nightMinutes">) => {
-      const totalBreakMinutes = getBreakIntervalMinutes(record) || record.totalBreakMinutes;
+      const totalBreakMinutes = getBreakIntervalMinutes(record);
       const newRecord: AttendanceRecord = {
         ...record,
         totalBreakMinutes,

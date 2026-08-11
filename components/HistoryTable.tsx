@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { AttendanceRecord, Staff } from "@/lib/types";
-import { formatDateTime, formatMinutes, formatCurrency, roundUpBreakMinutes, calculateRecordPayroll, formatBreakMinutes, formatWorkDateParts, getEffectiveBreakMinutes } from "@/lib/time";
+import { formatDateTime, formatMinutes, formatCurrency, calculateRecordPayroll, formatBreakMinutes, formatWorkDateParts, getEffectiveBreakMinutes } from "@/lib/time";
 import type { Allowance } from "@/lib/types";
 
 type HistoryTableProps = {
@@ -31,19 +31,17 @@ export function HistoryTable({ records, staffList = [], isAdmin = true, allowanc
     return filtered.sort((a, b) => new Date(b.workDate).getTime() - new Date(a.workDate).getTime());
   }, [records, filterStaffId, filterMonth]);
 
-  function getDailyPay(record: AttendanceRecord): { regularPay: number; overtimePay: number; totalPay: number; breakRounded: number; breakError: boolean; netWorkMinutes: number; overtimeMinutes: number; allowanceLabels: string[]; allowancePay: number } {
+  function getDailyPay(record: AttendanceRecord): { regularPay: number; overtimePay: number; totalPay: number; breakMinutes: number; netWorkMinutes: number; overtimeMinutes: number; allowanceLabels: string[]; allowancePay: number } {
     const staff = staffList.find((s) => s.id === record.staffId);
     const payroll = calculateRecordPayroll(record, staff, allowances, now);
-    const effectiveBreakMinutes = getEffectiveBreakMinutes(record, staff);
-    const { rounded: breakRounded, error: breakError } = effectiveBreakMinutes === 0 ? { rounded: 0, error: false } : roundUpBreakMinutes(effectiveBreakMinutes);
+    const breakMinutes = getEffectiveBreakMinutes(record);
     const regularPay = payroll.basePay;
     const overtimePay = payroll.overtimePay;
     return {
       regularPay,
       overtimePay,
       totalPay: payroll.totalPay,
-      breakRounded,
-      breakError,
+      breakMinutes,
       netWorkMinutes: payroll.workMinutes,
       overtimeMinutes: payroll.overtimeMinutes,
       allowanceLabels: payroll.allowanceLabels,
@@ -121,11 +119,7 @@ export function HistoryTable({ records, staffList = [], isAdmin = true, allowanc
                   <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(record.breakStart)}</td>
                   <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(record.breakEnd)}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    {pay.breakError ? (
-                      <span className="font-bold text-red-600">{pay.breakRounded}分（エラー）</span>
-                    ) : (
-                      formatBreakMinutes(pay.breakRounded)
-                    )}
+                    {formatBreakMinutes(pay.breakMinutes)}
                   </td>
                   {isAdmin && (
                     <>
