@@ -40,6 +40,11 @@ create policy "Allow public update attendance_records" on public.attendance_reco
   using (true)
   with check (true);
 
+drop policy if exists "Allow public delete attendance_records" on public.attendance_records;
+create policy "Allow public delete attendance_records" on public.attendance_records
+  for delete
+  using (true);
+
 -- allowances -------------------------------------------------------
 alter table public.allowances enable row level security;
 

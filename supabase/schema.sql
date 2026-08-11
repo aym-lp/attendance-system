@@ -38,6 +38,7 @@ create table if not exists public.attendance_records (
 
 create index if not exists attendance_records_staff_date_idx on public.attendance_records (staff_id, work_date);
 create index if not exists attendance_records_date_idx on public.attendance_records (work_date);
+create unique index if not exists attendance_records_staff_date_unique_idx on public.attendance_records (staff_id, work_date);
 
 create table if not exists public.allowances (
   id uuid primary key default gen_random_uuid(),
