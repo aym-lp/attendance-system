@@ -38,7 +38,29 @@ create table if not exists public.attendance_records (
 
 create index if not exists attendance_records_staff_date_idx on public.attendance_records (staff_id, work_date);
 create index if not exists attendance_records_date_idx on public.attendance_records (work_date);
-create unique index if not exists attendance_records_staff_date_unique_idx on public.attendance_records (staff_id, work_date);
+
+-- 既存データを変更せず、今後の同一スタッフ・同一日付の重複登録を防止する。
+create or replace function public.prevent_duplicate_attendance_record()
+returns trigger as $$
+begin
+  if exists (
+    select 1
+    from public.attendance_records
+    where staff_id = new.staff_id
+      and work_date = new.work_date
+      and id is distinct from new.id
+  ) then
+    raise exception '同じスタッフ・同じ日付の勤務記録はすでに登録されています';
+  end if;
+
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists attendance_records_prevent_duplicate on public.attendance_records;
+create trigger attendance_records_prevent_duplicate
+  before insert or update of staff_id, work_date on public.attendance_records
+  for each row execute function public.prevent_duplicate_attendance_record();
 
 create table if not exists public.allowances (
   id uuid primary key default gen_random_uuid(),
