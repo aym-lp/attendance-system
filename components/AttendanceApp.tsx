@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Allowance, AttendanceRecord, CorrectionField, CorrectionHistory, Staff } from "@/lib/types";
+import type { Allowance, AttendanceRecord, CorrectionField, CorrectionHistory, CorrectionTimeField, Staff } from "@/lib/types";
 import { buildMonthlySummary, createEmptyRecord, getBreakIntervalMinutes, getTodayKey, recordsToCsv } from "@/lib/time";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { generateSeedData } from "@/lib/seedData";
@@ -384,13 +384,13 @@ export function AttendanceApp() {
   );
 
   const updateAttendanceRecord = useCallback(
-    (recordId: string, values: Partial<Pick<AttendanceRecord, CorrectionField>>) => {
+    (recordId: string, values: Partial<Pick<AttendanceRecord, CorrectionTimeField>>) => {
       if (!currentStaff) return;
 
       const updatedRecords = recordsRef.current.map((record) => {
         if (record.id !== recordId) return record;
 
-        const fields: CorrectionField[] = ["clockIn", "clockOut", "breakStart", "breakEnd"];
+        const fields: CorrectionTimeField[] = ["clockIn", "clockOut", "breakStart", "breakEnd"];
         const histories: CorrectionHistory[] = fields
           .filter((field) => values[field] !== undefined && values[field] !== null && values[field] !== "" && record[field] !== values[field])
           .map((field) => ({
@@ -550,22 +550,49 @@ export function AttendanceApp() {
                 }
               }}
               onDeleteDayRecords={(staffId, workDate) => {
-                setRecords((prev) => prev.filter((item) => !(item.staffId === staffId && item.workDate === workDate)));
-                setCorrectionHistories((prev) => prev.filter((item) => !(item.staffId === staffId && item.workDate === workDate)));
-                setMessage(`${workDate}の勤務データを削除しました`);
+                const recordsToDelete = recordsRef.current.filter((item) => item.staffId === staffId && item.workDate === workDate);
+                const deletedAt = new Date().toISOString();
+                const deletionHistories: CorrectionHistory[] = recordsToDelete.map((record) => ({
+                  id: crypto.randomUUID(),
+                  recordId: record.id,
+                  staffId: record.staffId,
+                  staffName: record.staffName,
+                  workDate: record.workDate,
+                  field: "dayDeletion",
+                  beforeValue: JSON.stringify({
+                    clockIn: record.clockIn,
+                    clockOut: record.clockOut,
+                    breakStart: record.breakStart,
+                    breakEnd: record.breakEnd,
+                  }),
+                  afterValue: null,
+                  correctedBy: currentStaff.name,
+                  correctedAt: deletedAt,
+                  reason: "勤務削除",
+                }));
 
-                if (cloudEnabled) {
-                  void (async () => {
-                    try {
+                const deleteDayRecords = async () => {
+                  try {
+                    if (cloudEnabled) {
+                      await insertCorrectionHistoriesCloud(deletionHistories);
                       await deleteAttendanceRecordsByStaffDateCloud(staffId, workDate);
-                      setCloudError(null);
-                    } catch (error) {
-                      handleCloudError(error, "指定日の勤務データの削除に失敗しました");
-                      await refreshRecords();
-                      await refreshCorrections();
                     }
-                  })();
-                }
+
+                    const nextRecords = recordsRef.current.filter((item) => !(item.staffId === staffId && item.workDate === workDate));
+                    recordsRef.current = nextRecords;
+                    setRecords(nextRecords);
+                    setCorrectionHistories((prev) => [...deletionHistories, ...prev]);
+                    setMessage(`${workDate}の勤務データを削除しました`);
+                    setCloudError(null);
+                  } catch (error) {
+                    handleCloudError(error, "指定日の勤務データの削除に失敗しました");
+                    await refreshRecords();
+                    await refreshCorrections();
+                    throw error;
+                  }
+                };
+
+                return deleteDayRecords();
               }}
               onAddAllowance={(allowance) => {
                 const newAllowance = { ...allowance, id: crypto.randomUUID() };

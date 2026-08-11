@@ -48,7 +48,7 @@ type AllowanceRow = {
 
 type CorrectionHistoryRow = {
   id: string;
-  record_id: string;
+  record_id: string | null;
   staff_id: string;
   staff_name: string;
   work_date: string;

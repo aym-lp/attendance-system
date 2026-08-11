@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Allowance, AttendanceRecord, AttendanceSummary, CorrectionField, CorrectionHistory, Staff, StaffRole } from "@/lib/types";
+import type { Allowance, AttendanceRecord, AttendanceSummary, CorrectionField, CorrectionHistory, CorrectionTimeField, Staff, StaffRole } from "@/lib/types";
 import { formatCurrency, formatDateTime, formatMinutes, formatWorkDateForDialog, fromDateTimeInputValue, toDateTimeInputValue } from "@/lib/time";
 import { HistoryTable } from "@/components/HistoryTable";
 import { AllowancePanel } from "@/components/AllowancePanel";
@@ -12,7 +12,20 @@ const correctionFieldLabel: Record<CorrectionField, string> = {
   clockOut: "退勤時間",
   breakStart: "休憩開始時間",
   breakEnd: "休憩終了時間",
+  dayDeletion: "勤務削除",
 };
+
+type AdminView = "menu" | "staff" | "history" | "correction" | "correctionHistory" | "monthly" | "allowance";
+
+const adminMenuItems: Array<{ view: AdminView; label: string }> = [
+  { view: "menu", label: "トップ" },
+  { view: "staff", label: "スタッフ一覧" },
+  { view: "history", label: "勤怠履歴一覧" },
+  { view: "correction", label: "打刻修正" },
+  { view: "correctionHistory", label: "打刻修正履歴" },
+  { view: "monthly", label: "月次集計" },
+  { view: "allowance", label: "特別手当設定" },
+];
 
 type AdminPanelProps = {
   isAdmin: boolean;
@@ -28,10 +41,10 @@ type AdminPanelProps = {
   onAddStaff: (staff: Omit<Staff, "id" | "isActive">) => void;
   onUpdateStaff: (id: string, staff: Partial<Omit<Staff, "id" | "isActive">>) => void;
   onDeleteStaff: (id: string) => void;
-  onUpdateRecord: (recordId: string, values: Partial<Pick<AttendanceRecord, CorrectionField>>) => void;
+  onUpdateRecord: (recordId: string, values: Partial<Pick<AttendanceRecord, CorrectionTimeField>>) => void;
   onCreateRecord: (record: Omit<AttendanceRecord, "workMinutes" | "overtimeMinutes" | "nightMinutes">) => void;
   onDeleteRecord: (recordId: string) => void;
-  onDeleteDayRecords: (staffId: string, workDate: string) => void;
+  onDeleteDayRecords: (staffId: string, workDate: string) => Promise<void>;
   onAddAllowance: (allowance: Omit<Allowance, "id">) => void;
   onDeleteAllowance: (id: string) => void;
 };
@@ -149,12 +162,18 @@ function StaffDetailPanel({ staff, onUpdateStaff, onDeleteStaff }: { staff: Staf
 }
 
 export function AdminPanel({ isAdmin, currentStaff, staffList, records, correctionHistories, selectedMonth, monthlySummary, allowances, onMonthChange, onExportCsv, onAddStaff, onUpdateStaff, onDeleteStaff, onUpdateRecord, onCreateRecord, onDeleteRecord, onDeleteDayRecords, onAddAllowance, onDeleteAllowance }: AdminPanelProps) {
-  const [currentView, setCurrentView] = useState<"menu" | "staff" | "history" | "correction" | "correctionHistory" | "monthly" | "allowance">("menu");
+  const [currentView, setCurrentView] = useState<AdminView>("menu");
   const [historyStaffId, setHistoryStaffId] = useState("all");
   const [historyMonth, setHistoryMonth] = useState(selectedMonth);
   const [showStaffRegistration, setShowStaffRegistration] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [selectedSummary, setSelectedSummary] = useState<AttendanceSummary | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const navigateTo = (view: AdminView) => {
+    setCurrentView(view);
+    setIsMobileMenuOpen(false);
+  };
 
   const uniqueMonths = useMemo(() => {
     const months = new Set(records.map((r) => r.workDate.slice(0, 7)));
@@ -198,8 +217,54 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
 
   return (
     <div className="space-y-5">
+      <div className="relative lg:hidden">
+        <div className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
+          <p className="font-bold text-[#6d4c41]">メニュー</p>
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen((current) => !current)}
+            aria-expanded={isMobileMenuOpen}
+            aria-label="メニューを開く"
+            className="rounded-xl border border-[#d7ccc8] px-3 py-2 text-xl font-bold text-[#6d4c41] shadow-sm"
+          >
+            ☰
+          </button>
+        </div>
+        {isMobileMenuOpen && (
+          <nav className="absolute inset-x-0 top-full z-40 mt-2 rounded-2xl border border-[#d7ccc8] bg-white p-2 shadow-lg" aria-label="管理メニュー">
+            {adminMenuItems.map((item) => (
+              <button
+                key={item.view}
+                type="button"
+                onClick={() => navigateTo(item.view)}
+                className={`min-h-11 w-full rounded-xl px-4 text-left text-sm font-bold transition-colors ${currentView === item.view ? "bg-[#6d4c41] text-white" : "text-[#6d4c41] hover:bg-[#efebe9]"}`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+        )}
+      </div>
+      <div className={currentView === "menu" ? "" : "lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start lg:gap-5"}>
+        {currentView !== "menu" && (
+          <aside className="sticky top-20 hidden rounded-3xl bg-white p-3 shadow-sm lg:block">
+            <nav className="space-y-1" aria-label="管理メニュー">
+              {adminMenuItems.map((item) => (
+                <button
+                  key={item.view}
+                  type="button"
+                  onClick={() => navigateTo(item.view)}
+                  className={`min-h-11 w-full rounded-xl px-4 text-left text-sm font-bold transition-colors ${currentView === item.view ? "bg-[#6d4c41] text-white shadow-sm" : "text-[#6d4c41] hover:bg-[#efebe9]"}`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          </aside>
+        )}
+        <div className="min-w-0">
       {currentView === "menu" && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="hidden gap-3 lg:grid lg:grid-cols-3">
           {isAdmin && (
             <>
               <MenuButton label="スタッフ一覧" onClick={() => setCurrentView("staff")} />
@@ -326,6 +391,8 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
           <button onClick={() => setCurrentView("menu")} className="mt-6 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
         </div>
       )}
+        </div>
+      </div>
 
       {showStaffRegistration && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -470,7 +537,7 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
   const [selectedStaffId, setSelectedStaffId] = useState(isSelfMode ? currentStaffId : "");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedRecordId, setSelectedRecordId] = useState("");
-  const [selectedField, setSelectedField] = useState<CorrectionField | null>(null);
+  const [selectedField, setSelectedField] = useState<CorrectionTimeField | null>(null);
   const [values, setValues] = useState({ clockIn: "", clockOut: "", breakStart: "", breakEnd: "" });
 
   const staffRecords = selectedStaffId && selectedDate ? records.filter((r) => r.staffId === selectedStaffId && r.workDate === selectedDate) : [];
@@ -494,6 +561,7 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
 
   const loadRecord = (recordId: string) => {
     setSelectedRecordId(recordId);
+    setSelectedField(null);
     const record = staffRecords.find((item) => item.id === recordId);
     setValues({
       clockIn: toTimeValue(record?.clockIn ?? null),
@@ -503,14 +571,18 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
     });
   };
 
-  const deleteSelectedDayRecords = () => {
+  const deleteSelectedDayRecords = async () => {
     if (!selectedStaffId || !selectedDate) return;
     const dialogDate = formatWorkDateForDialog(selectedDate);
     if (!confirm(`${dialogDate}の勤務データを削除しますか？\nこの操作は元に戻せません。`)) return;
-    onDeleteDayRecords(selectedStaffId, selectedDate);
-    setSelectedRecordId("");
-    setSelectedField(null);
-    setValues({ clockIn: "", clockOut: "", breakStart: "", breakEnd: "" });
+    try {
+      await onDeleteDayRecords(selectedStaffId, selectedDate);
+      setSelectedRecordId("");
+      setSelectedField(null);
+      setValues({ clockIn: "", clockOut: "", breakStart: "", breakEnd: "" });
+    } catch {
+      // 保存または削除に失敗した場合は、選択状態を維持して再操作できるようにする。
+    }
   };
 
   const submit = () => {
@@ -537,7 +609,7 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
     if (!targetRecord) return;
 
     // 修正対象フィールドのみを更新（部分的なPATCH）
-    const updateData: Partial<Pick<AttendanceRecord, CorrectionField>> = {};
+    const updateData: Partial<Pick<AttendanceRecord, CorrectionTimeField>> = {};
     if (selectedField === "clockIn" || values.clockIn) {
       updateData.clockIn = toDateTimeValue(targetRecord.workDate, values.clockIn);
     }
@@ -562,7 +634,12 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
         {!isSelfMode && (
           <div>
             <p className="mb-2 text-sm font-semibold">スタッフを選択</p>
-            <select value={selectedStaffId} onChange={(event) => setSelectedStaffId(event.target.value)} className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-950">
+            <select value={selectedStaffId} onChange={(event) => {
+              setSelectedStaffId(event.target.value);
+              setSelectedDate("");
+              setSelectedRecordId("");
+              setSelectedField(null);
+            }} className="min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-950">
               <option value="">スタッフを選択</option>
               {staffList.map((staff) => <option key={staff.id} value={staff.id}>{staff.name}</option>)}
             </select>
@@ -571,7 +648,11 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
         {selectedStaffId && (
           <div>
             <p className="mb-2 text-sm font-semibold">日付を選択</p>
-            <DatePickerInput value={selectedDate} onChange={(value) => setSelectedDate(value)} />
+            <DatePickerInput value={selectedDate} onChange={(value) => {
+              setSelectedDate(value);
+              setSelectedRecordId("");
+              setSelectedField(null);
+            }} />
           </div>
         )}
         {selectedStaffId && selectedDate && (
@@ -612,10 +693,10 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
                   <div className="mt-4">
                     <p className="mb-2 text-sm font-semibold">修正箇所を選択</p>
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                      {(["clockIn", "clockOut", "breakStart", "breakEnd"] as CorrectionField[]).map((field) => (
+                      {(["clockIn", "clockOut", "breakStart", "breakEnd"] as CorrectionTimeField[]).map((field) => (
                         <button
                           key={field}
-                          onClick={() => setSelectedField(field)}
+                          onClick={() => setSelectedField((current) => current === field ? null : field)}
                           className={`min-h-12 rounded-2xl border px-3 text-sm font-bold shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d4c41] ${selectedField === field ? "border-[#6d4c41] bg-[#6d4c41] text-white shadow-md" : "border-slate-200 bg-white text-slate-700 hover:border-[#a1887f] hover:bg-[#efebe9] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-[#a1887f] dark:hover:bg-slate-700"}`}
                         >
                           {correctionFieldLabel[field]}
@@ -633,7 +714,7 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
                 {selectedField && (
                   <button onClick={submit} className="mt-4 min-h-14 w-full rounded-2xl bg-[#8d6e63] px-6 font-bold text-white">打刻を修正</button>
                 )}
-                {!isSelfMode && targetRecord && (
+                {!isSelfMode && targetRecord && !selectedField && (
                   <button onClick={deleteSelectedDayRecords} className="mt-4 min-h-12 w-full rounded-2xl bg-red-700 px-4 py-2 text-sm font-bold text-white">この日の勤務を削除</button>
                 )}
               </div>
@@ -657,9 +738,11 @@ function CorrectionHistoryTable({ histories }: { histories: CorrectionHistory[] 
             <tr key={history.id} className="border-t border-slate-100 dark:border-slate-800">
               <td className="px-4 py-3 font-semibold">{history.staffName}</td>
               <td className="px-4 py-3">{history.workDate}</td>
-              <td className="px-4 py-3">{correctionFieldLabel[history.field]}</td>
-              <td className="px-4 py-3">{formatDateTime(history.beforeValue)}</td>
-              <td className="px-4 py-3">{formatDateTime(history.afterValue)}</td>
+              <td className="px-4 py-3">
+                {history.field === "dayDeletion" ? <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-700">勤務削除</span> : correctionFieldLabel[history.field]}
+              </td>
+              <td className="px-4 py-3">{history.field === "dayDeletion" ? <DeletedAttendanceValues value={history.beforeValue} /> : formatDateTime(history.beforeValue)}</td>
+              <td className="px-4 py-3">{history.field === "dayDeletion" ? "—" : formatDateTime(history.afterValue)}</td>
               <td className="px-4 py-3">{history.correctedBy}</td>
               <td className="px-4 py-3">{new Intl.DateTimeFormat("ja-JP", { dateStyle: "short", timeStyle: "short" }).format(new Date(history.correctedAt))}</td>
             </tr>
@@ -669,6 +752,22 @@ function CorrectionHistoryTable({ histories }: { histories: CorrectionHistory[] 
       </table>
     </div>
   );
+}
+
+function DeletedAttendanceValues({ value }: { value: string | null }) {
+  try {
+    const details = JSON.parse(value ?? "{}") as Record<string, string | null>;
+    return (
+      <div className="space-y-1 whitespace-nowrap text-xs">
+        <p>出勤：{formatDateTime(details.clockIn ?? null)}</p>
+        <p>退勤：{formatDateTime(details.clockOut ?? null)}</p>
+        <p>休憩開始：{formatDateTime(details.breakStart ?? null)}</p>
+        <p>休憩終了：{formatDateTime(details.breakEnd ?? null)}</p>
+      </div>
+    );
+  } catch {
+    return <span>{value ?? "—"}</span>;
+  }
 }
 
 function Input({ label, value, onChange, inputMode }: { label: string; value: string; onChange: (value: string) => void; inputMode?: "numeric" }) {

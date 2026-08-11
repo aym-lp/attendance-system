@@ -55,7 +55,7 @@ create index if not exists allowances_staff_idx on public.allowances (staff_id, 
 
 create table if not exists public.correction_histories (
   id uuid primary key default gen_random_uuid(),
-  record_id uuid not null references public.attendance_records(id) on delete cascade,
+  record_id uuid references public.attendance_records(id) on delete set null,
   staff_id uuid not null references public.staff(id) on delete cascade,
   staff_name text not null,
   work_date text not null,

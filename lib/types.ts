@@ -49,11 +49,12 @@ export type AttendanceSummary = {
   totalPay: number;
 };
 
-export type CorrectionField = "clockIn" | "clockOut" | "breakStart" | "breakEnd";
+export type CorrectionField = "clockIn" | "clockOut" | "breakStart" | "breakEnd" | "dayDeletion";
+export type CorrectionTimeField = Exclude<CorrectionField, "dayDeletion">;
 
 export type CorrectionHistory = {
   id: string;
-  recordId: string;
+  recordId: string | null;
   staffId: string;
   staffName: string;
   workDate: string;
