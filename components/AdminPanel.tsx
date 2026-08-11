@@ -233,6 +233,7 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
               </button>
             ))}
           </div>
+          <button onClick={() => setCurrentView("menu")} className="mt-6 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
         </div>
       )}
 
@@ -241,6 +242,7 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
           <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
           <h2 className="text-2xl font-bold">勤務履歴一覧</h2>
           <HistoryTable records={records} staffList={staffList} isAdmin={isAdmin} allowances={allowances} />
+          <button onClick={() => setCurrentView("menu")} className="mt-6 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
         </div>
       )}
 
@@ -254,6 +256,7 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
             onAddAllowance={onAddAllowance}
             onDeleteAllowance={onDeleteAllowance}
           />
+          <button onClick={() => setCurrentView("menu")} className="mt-6 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
         </div>
       )}
 
@@ -262,6 +265,7 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
           <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
           <h2 className="text-2xl font-bold">打刻修正</h2>
           <AttendanceCorrectionPanel staffList={staffList} records={records} onUpdateRecord={onUpdateRecord} onCreateRecord={onCreateRecord} onDeleteRecord={onDeleteRecord} onDeleteDayRecords={onDeleteDayRecords} />
+          <button onClick={() => setCurrentView("menu")} className="mt-6 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
         </div>
       )}
 
@@ -270,7 +274,6 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
           <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-[#6d4c41]">削除不可・新しい順</p>
               <h2 className="text-2xl font-bold">打刻修正履歴</h2>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -282,6 +285,7 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
             </div>
           </div>
           <CorrectionHistoryTable histories={filteredHistories} />
+          <button onClick={() => setCurrentView("menu")} className="mt-6 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
         </div>
       )}
 
@@ -319,6 +323,7 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
           {monthlySummary.length > 0 && (
             <SpreadsheetSyncPanel month={selectedMonth} summaries={monthlySummary} />
           )}
+          <button onClick={() => setCurrentView("menu")} className="mt-6 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
         </div>
       )}
 
