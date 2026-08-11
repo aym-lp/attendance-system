@@ -3,10 +3,11 @@ import type { Allowance, AttendanceRecord, AttendanceSummary, Staff } from "@/li
 const STANDARD_WORK_MINUTES = 8 * 60;
 
 export function roundUpBreakMinutes(minutes: number): { rounded: number; error: boolean } {
-  if (minutes === 0) return { rounded: 0, error: false };
-  if (minutes <= 30) return { rounded: 30, error: false };
-  if (minutes <= 45) return { rounded: 45, error: false };
-  return { rounded: minutes, error: true };
+  const normalized = Math.max(0, Math.round(Number(minutes) || 0));
+  if (normalized === 0) return { rounded: 0, error: false };
+  if (normalized <= 30) return { rounded: 30, error: false };
+  if (normalized <= 45) return { rounded: 45, error: false };
+  return { rounded: normalized, error: true };
 }
 
 function roundUpTo15Minutes(date: Date): Date {
@@ -50,9 +51,10 @@ export function calculateRecordPayroll(record: AttendanceRecord, staff: Staff | 
 
   const clockOutTime = parseTime(record.clockOut);
   const referenceTime = clockOutTime ?? now;
-  const { rounded: roundedBreakMinutes } = roundUpBreakMinutes(record.totalBreakMinutes);
-  const workMinutes = record.workMinutes || getWorkedMinutesWithRoundedBreak(record, referenceTime, roundedBreakMinutes);
-  const overtimeMinutes = record.overtimeMinutes || getOvertimeMinutesWithRoundedBreak(record, referenceTime, roundedBreakMinutes);
+  const roundedBreakMinutes = getEffectiveBreakMinutes(record, staff);
+  const shouldUseStoredWorkMinutes = record.workMinutes > 0 && record.totalBreakMinutes > 0;
+  const workMinutes = shouldUseStoredWorkMinutes ? record.workMinutes : getWorkedMinutesWithRoundedBreak(record, referenceTime, roundedBreakMinutes);
+  const overtimeMinutes = shouldUseStoredWorkMinutes && record.overtimeMinutes > 0 ? record.overtimeMinutes : getOvertimeMinutesWithRoundedBreak(record, referenceTime, roundedBreakMinutes);
   const nightMinutes = record.nightMinutes || 0;
   const baseMinutes = Math.max(0, workMinutes - overtimeMinutes);
   const allowanceMinutes = allowanceHourlyAddition > 0 ? workMinutes : 0;
@@ -113,6 +115,64 @@ export function formatMinutes(minutes: number) {
   const hours = Math.floor(normalized / 60);
   const mins = normalized % 60;
   return `${hours}時間${mins.toString().padStart(2, "0")}分`;
+}
+
+export function formatBreakMinutes(minutes: number) {
+  const normalized = Math.max(0, Math.round(minutes));
+  return `${normalized}分`;
+}
+
+export function getBreakIntervalMinutes(record: Pick<AttendanceRecord, "breakStart" | "breakEnd">) {
+  const start = parseTime(record.breakStart);
+  const end = parseTime(record.breakEnd);
+  if (!start || !end) return 0;
+  return Math.max(0, (end.getTime() - start.getTime()) / 60000);
+}
+
+function normalizeBreakSetting(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return null;
+  const rounded = roundUpBreakMinutes(numeric).rounded;
+  return rounded === 30 || rounded === 45 ? rounded : null;
+}
+
+export function getStaffBreakMinutes(staff: Staff | undefined): number | null {
+  if (!staff) return null;
+  const rawStaff = staff as Staff & Record<string, unknown>;
+  return (
+    normalizeBreakSetting(rawStaff.breakMinutes) ??
+    normalizeBreakSetting(rawStaff.break_minutes) ??
+    normalizeBreakSetting(rawStaff.defaultBreakMinutes) ??
+    normalizeBreakSetting(rawStaff.default_break_minutes)
+  );
+}
+
+export function getEffectiveBreakMinutes(record: AttendanceRecord, staff?: Staff): number {
+  const stored = Number(record.totalBreakMinutes);
+  if (Number.isFinite(stored) && stored > 0) {
+    return roundUpBreakMinutes(stored).rounded;
+  }
+
+  const interval = getBreakIntervalMinutes(record);
+  if (interval > 0) {
+    return roundUpBreakMinutes(interval).rounded;
+  }
+
+  return getStaffBreakMinutes(staff) ?? 0;
+}
+
+export function formatWorkDateParts(value: string): { year: string; monthDay: string } {
+  const [year = "", month = "", day = ""] = value.split("-");
+  return {
+    year,
+    monthDay: month && day ? `${Number(month)}/${Number(day)}` : value,
+  };
+}
+
+export function formatWorkDateForDialog(value: string) {
+  const { year, monthDay } = formatWorkDateParts(value);
+  return year && monthDay !== value ? `${year}/${monthDay}` : value;
 }
 
 export function getWorkedMinutes(record: AttendanceRecord, now = new Date()) {
@@ -233,7 +293,7 @@ export function buildMonthlySummary(records: AttendanceRecord[], month: string, 
 
     current.workDays += record.clockIn ? 1 : 0;
     current.workMinutes += payroll.workMinutes;
-    current.breakMinutes += record.totalBreakMinutes;
+    current.breakMinutes += getEffectiveBreakMinutes(record, staff);
     current.overtimeMinutes += payroll.overtimeMinutes;
     current.nightMinutes += payroll.nightMinutes;
     current.allowanceMinutes += payroll.allowanceMinutes;
@@ -275,7 +335,7 @@ export function recordsToCsv(records: AttendanceRecord[], staffList: Staff[], al
       record.staffName,
       formatDateTime(record.clockIn),
       formatDateTime(record.clockOut),
-      formatMinutes(record.totalBreakMinutes),
+      formatBreakMinutes(getEffectiveBreakMinutes(record, staff)),
       formatMinutes(grossWorkMinutes),
       formatMinutes(overtimeMinutes),
       formatCurrency(regularPay),

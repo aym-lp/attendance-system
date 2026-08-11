@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { AttendanceRecord, Staff } from "@/lib/types";
-import { formatDateTime, formatMinutes, formatCurrency, roundUpBreakMinutes, calculateRecordPayroll } from "@/lib/time";
+import { formatDateTime, formatMinutes, formatCurrency, roundUpBreakMinutes, calculateRecordPayroll, formatBreakMinutes, formatWorkDateParts, getEffectiveBreakMinutes } from "@/lib/time";
 import type { Allowance } from "@/lib/types";
 
 type HistoryTableProps = {
@@ -34,7 +34,8 @@ export function HistoryTable({ records, staffList = [], isAdmin = true, allowanc
   function getDailyPay(record: AttendanceRecord): { regularPay: number; overtimePay: number; totalPay: number; breakRounded: number; breakError: boolean; netWorkMinutes: number; overtimeMinutes: number; allowanceLabels: string[]; allowancePay: number } {
     const staff = staffList.find((s) => s.id === record.staffId);
     const payroll = calculateRecordPayroll(record, staff, allowances, now);
-    const { rounded: breakRounded, error: breakError } = record.totalBreakMinutes === 0 ? { rounded: 0, error: false } : roundUpBreakMinutes(record.totalBreakMinutes);
+    const effectiveBreakMinutes = getEffectiveBreakMinutes(record, staff);
+    const { rounded: breakRounded, error: breakError } = effectiveBreakMinutes === 0 ? { rounded: 0, error: false } : roundUpBreakMinutes(effectiveBreakMinutes);
     const regularPay = payroll.basePay;
     const overtimePay = payroll.overtimePay;
     return {
@@ -82,24 +83,24 @@ export function HistoryTable({ records, staffList = [], isAdmin = true, allowanc
         </select>
       </div>
       <div className="overflow-x-auto">
-        <table className={`w-full text-left text-sm ${isAdmin ? "min-w-[960px]" : "min-w-[480px]"}`}>
+        <table className={`w-full table-auto text-left text-sm ${isAdmin ? "min-w-[1180px]" : "min-w-[620px]"}`}>
           <thead className="bg-[#d7ccc8] text-[#3e2723]">
             <tr>
-              <th className="px-4 py-3">日付</th>
-              <th className="px-4 py-3">スタッフ</th>
-              <th className="px-4 py-3">出勤</th>
-              <th className="px-4 py-3">退勤</th>
-              <th className="px-4 py-3">休憩開始</th>
-              <th className="px-4 py-3">休憩終了</th>
-              <th className="px-4 py-3">休憩時間</th>
+              <th className="min-w-[72px] px-4 py-3 whitespace-nowrap">日付</th>
+              <th className="px-4 py-3 whitespace-nowrap">スタッフ</th>
+              <th className="px-4 py-3 whitespace-nowrap">出勤</th>
+              <th className="px-4 py-3 whitespace-nowrap">退勤</th>
+              <th className="min-w-[96px] px-4 py-3 whitespace-nowrap">休憩開始</th>
+              <th className="min-w-[96px] px-4 py-3 whitespace-nowrap">休憩終了</th>
+              <th className="min-w-[88px] px-4 py-3 whitespace-nowrap">休憩時間</th>
               {isAdmin && (
                 <>
-                  <th className="px-4 py-3">実働時間</th>
-                  <th className="px-4 py-3">残業時間</th>
-                  <th className="px-4 py-3">通常給与</th>
-                  <th className="px-4 py-3">残業給与</th>
-                  <th className="px-4 py-3">日給合計</th>
-                  <th className="px-4 py-3">手当</th>
+                  <th className="px-4 py-3 whitespace-nowrap">実働時間</th>
+                  <th className="px-4 py-3 whitespace-nowrap">残業時間</th>
+                  <th className="px-4 py-3 whitespace-nowrap">通常給与</th>
+                  <th className="px-4 py-3 whitespace-nowrap">残業給与</th>
+                  <th className="px-4 py-3 whitespace-nowrap">日給合計</th>
+                  <th className="min-w-[96px] px-4 py-3 whitespace-nowrap">手当</th>
                 </>
               )}
             </tr>
@@ -107,19 +108,23 @@ export function HistoryTable({ records, staffList = [], isAdmin = true, allowanc
           <tbody>
             {sortedAndFilteredRecords.map((record) => {
               const pay = getDailyPay(record);
+              const dateParts = formatWorkDateParts(record.workDate);
               return (
                 <tr key={record.id} className="border-t border-[#d7ccc8]">
-                  <td className="px-4 py-3">{record.workDate}</td>
-                  <td className="px-4 py-3 font-semibold">{record.staffName}</td>
-                  <td className="px-4 py-3">{formatDateTime(record.clockIn)}</td>
-                  <td className="px-4 py-3">{formatDateTime(record.clockOut)}</td>
-                  <td className="px-4 py-3">{formatDateTime(record.breakStart)}</td>
-                  <td className="px-4 py-3">{formatDateTime(record.breakEnd)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 leading-tight whitespace-nowrap">
+                    <span className="block">{dateParts.year}</span>
+                    <span className="block">{dateParts.monthDay}</span>
+                  </td>
+                  <td className="px-4 py-3 font-semibold whitespace-nowrap">{record.staffName}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(record.clockIn)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(record.clockOut)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(record.breakStart)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(record.breakEnd)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
                     {pay.breakError ? (
                       <span className="font-bold text-red-600">{pay.breakRounded}分（エラー）</span>
                     ) : (
-                      formatMinutes(pay.breakRounded)
+                      formatBreakMinutes(pay.breakRounded)
                     )}
                   </td>
                   {isAdmin && (

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Allowance, AttendanceRecord, CorrectionField, CorrectionHistory, Staff } from "@/lib/types";
-import { buildMonthlySummary, createEmptyRecord, getTodayKey, recordsToCsv } from "@/lib/time";
+import { buildMonthlySummary, createEmptyRecord, getBreakIntervalMinutes, getTodayKey, recordsToCsv } from "@/lib/time";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { generateSeedData } from "@/lib/seedData";
 import { AdminPanel } from "@/components/AdminPanel";
@@ -12,6 +12,7 @@ import { loadPersistedData, savePersistedData } from "@/lib/localStorage";
 import {
   deleteAllowance as deleteAllowanceCloud,
   deleteAttendanceRecord as deleteAttendanceRecordCloud,
+  deleteAttendanceRecordsByStaffDate as deleteAttendanceRecordsByStaffDateCloud,
   deleteStaff as deleteStaffCloud,
   fetchAllowances,
   fetchAttendanceRecords,
@@ -422,9 +423,10 @@ export function AttendanceApp() {
         }
 
         const totalBreakMinutes =
-          values.breakStart && values.breakEnd
-            ? Math.max(0, (new Date(values.breakEnd).getTime() - new Date(values.breakStart).getTime()) / 60000)
-            : record.totalBreakMinutes;
+          getBreakIntervalMinutes({
+            breakStart: values.breakStart ?? record.breakStart,
+            breakEnd: values.breakEnd ?? record.breakEnd,
+          }) || record.totalBreakMinutes;
 
         return {
           ...record,
@@ -458,8 +460,10 @@ export function AttendanceApp() {
 
   const createAttendanceRecord = useCallback(
     (record: Omit<AttendanceRecord, "workMinutes" | "overtimeMinutes" | "nightMinutes">) => {
+      const totalBreakMinutes = getBreakIntervalMinutes(record) || record.totalBreakMinutes;
       const newRecord: AttendanceRecord = {
         ...record,
+        totalBreakMinutes,
         workMinutes: 0,
         overtimeMinutes: 0,
         nightMinutes: 0,
@@ -543,6 +547,24 @@ export function AttendanceApp() {
                       setCloudError(null);
                     } catch (error) {
                       handleCloudError(error, "勤怠履歴の削除に失敗しました");
+                    }
+                  })();
+                }
+              }}
+              onDeleteDayRecords={(staffId, workDate) => {
+                setRecords((prev) => prev.filter((item) => !(item.staffId === staffId && item.workDate === workDate)));
+                setCorrectionHistories((prev) => prev.filter((item) => !(item.staffId === staffId && item.workDate === workDate)));
+                setMessage(`${workDate}の勤務データを削除しました`);
+
+                if (cloudEnabled) {
+                  void (async () => {
+                    try {
+                      await deleteAttendanceRecordsByStaffDateCloud(staffId, workDate);
+                      setCloudError(null);
+                    } catch (error) {
+                      handleCloudError(error, "指定日の勤務データの削除に失敗しました");
+                      await refreshRecords();
+                      await refreshCorrections();
                     }
                   })();
                 }

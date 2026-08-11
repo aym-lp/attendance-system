@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Allowance, AttendanceRecord, AttendanceSummary, CorrectionField, CorrectionHistory, Staff, StaffRole } from "@/lib/types";
-import { formatCurrency, formatDateTime, formatMinutes, fromDateTimeInputValue, toDateTimeInputValue } from "@/lib/time";
+import { formatCurrency, formatDateTime, formatMinutes, formatWorkDateForDialog, fromDateTimeInputValue, toDateTimeInputValue } from "@/lib/time";
 import { HistoryTable } from "@/components/HistoryTable";
 import { AllowancePanel } from "@/components/AllowancePanel";
 import { SpreadsheetSyncPanel } from "@/components/SpreadsheetSyncPanel";
@@ -31,6 +31,7 @@ type AdminPanelProps = {
   onUpdateRecord: (recordId: string, values: Partial<Pick<AttendanceRecord, CorrectionField>>) => void;
   onCreateRecord: (record: Omit<AttendanceRecord, "workMinutes" | "overtimeMinutes" | "nightMinutes">) => void;
   onDeleteRecord: (recordId: string) => void;
+  onDeleteDayRecords: (staffId: string, workDate: string) => void;
   onAddAllowance: (allowance: Omit<Allowance, "id">) => void;
   onDeleteAllowance: (id: string) => void;
 };
@@ -147,7 +148,7 @@ function StaffDetailPanel({ staff, onUpdateStaff, onDeleteStaff }: { staff: Staf
   );
 }
 
-export function AdminPanel({ isAdmin, currentStaff, staffList, records, correctionHistories, selectedMonth, monthlySummary, allowances, onMonthChange, onExportCsv, onAddStaff, onUpdateStaff, onDeleteStaff, onUpdateRecord, onCreateRecord, onDeleteRecord, onAddAllowance, onDeleteAllowance }: AdminPanelProps) {
+export function AdminPanel({ isAdmin, currentStaff, staffList, records, correctionHistories, selectedMonth, monthlySummary, allowances, onMonthChange, onExportCsv, onAddStaff, onUpdateStaff, onDeleteStaff, onUpdateRecord, onCreateRecord, onDeleteRecord, onDeleteDayRecords, onAddAllowance, onDeleteAllowance }: AdminPanelProps) {
   const [currentView, setCurrentView] = useState<"menu" | "staff" | "history" | "correction" | "correctionHistory" | "monthly" | "allowance">("menu");
   const [historyStaffId, setHistoryStaffId] = useState("all");
   const [historyMonth, setHistoryMonth] = useState(selectedMonth);
@@ -184,6 +185,7 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
             onUpdateRecord={onUpdateRecord}
             onCreateRecord={onCreateRecord}
             onDeleteRecord={onDeleteRecord}
+            onDeleteDayRecords={onDeleteDayRecords}
           />
         </div>
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
@@ -259,7 +261,7 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
           <button onClick={() => setCurrentView("menu")} className="mb-4 text-sm font-semibold text-[#6d4c41]">← メニューに戻る</button>
           <h2 className="text-2xl font-bold">打刻修正</h2>
-          <AttendanceCorrectionPanel staffList={staffList} records={records} onUpdateRecord={onUpdateRecord} onCreateRecord={onCreateRecord} onDeleteRecord={onDeleteRecord} />
+          <AttendanceCorrectionPanel staffList={staffList} records={records} onUpdateRecord={onUpdateRecord} onCreateRecord={onCreateRecord} onDeleteRecord={onDeleteRecord} onDeleteDayRecords={onDeleteDayRecords} />
         </div>
       )}
 
@@ -458,7 +460,7 @@ function StaffRegistrationPanel({ onAddStaff, onClose }: { onAddStaff: AdminPane
   );
 }
 
-function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdateRecord, onCreateRecord, onDeleteRecord }: { staffList: Staff[]; records: AttendanceRecord[]; currentStaffId?: string; onUpdateRecord: AdminPanelProps["onUpdateRecord"]; onCreateRecord: AdminPanelProps["onCreateRecord"]; onDeleteRecord: AdminPanelProps["onDeleteRecord"] }) {
+function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdateRecord, onCreateRecord, onDeleteRecord, onDeleteDayRecords }: { staffList: Staff[]; records: AttendanceRecord[]; currentStaffId?: string; onUpdateRecord: AdminPanelProps["onUpdateRecord"]; onCreateRecord: AdminPanelProps["onCreateRecord"]; onDeleteRecord: AdminPanelProps["onDeleteRecord"]; onDeleteDayRecords: AdminPanelProps["onDeleteDayRecords"] }) {
   const isSelfMode = !!currentStaffId;
   const [selectedStaffId, setSelectedStaffId] = useState(isSelfMode ? currentStaffId : "");
   const [selectedDate, setSelectedDate] = useState("");
@@ -494,6 +496,16 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
       breakStart: toTimeValue(record?.breakStart ?? null),
       breakEnd: toTimeValue(record?.breakEnd ?? null),
     });
+  };
+
+  const deleteSelectedDayRecords = () => {
+    if (!selectedStaffId || !selectedDate) return;
+    const dialogDate = formatWorkDateForDialog(selectedDate);
+    if (!confirm(`${dialogDate}の勤務データを削除しますか？\nこの操作は元に戻せません。`)) return;
+    onDeleteDayRecords(selectedStaffId, selectedDate);
+    setSelectedRecordId("");
+    setSelectedField(null);
+    setValues({ clockIn: "", clockOut: "", breakStart: "", breakEnd: "" });
   };
 
   const submit = () => {
@@ -580,16 +592,21 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
                 </select>
                 {targetRecord && (
                   <div className="mt-4 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <p className="font-bold">{targetRecord.staffName} - {targetRecord.workDate}</p>
-                      <button onClick={() => {
-                        if (confirm("この勤怠履歴を削除しますか？")) {
-                          onDeleteRecord(targetRecord.id);
-                          setSelectedRecordId("");
-                          setSelectedField(null);
-                          setValues({ clockIn: "", clockOut: "", breakStart: "", breakEnd: "" });
-                        }
-                      }} className="rounded-2xl bg-red-600 px-4 py-2 text-sm font-bold text-white">削除</button>
+                      <div className="flex flex-wrap gap-2">
+                        {!isSelfMode && (
+                          <button onClick={deleteSelectedDayRecords} className="rounded-2xl bg-red-700 px-4 py-2 text-sm font-bold text-white">この日の勤務を削除</button>
+                        )}
+                        <button onClick={() => {
+                          if (confirm("この勤怠履歴を削除しますか？")) {
+                            onDeleteRecord(targetRecord.id);
+                            setSelectedRecordId("");
+                            setSelectedField(null);
+                            setValues({ clockIn: "", clockOut: "", breakStart: "", breakEnd: "" });
+                          }
+                        }} className="rounded-2xl bg-red-600 px-4 py-2 text-sm font-bold text-white">削除</button>
+                      </div>
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                       <p>出勤：{formatDateTime(targetRecord.clockIn)}</p>
@@ -607,7 +624,7 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
                         <button
                           key={field}
                           onClick={() => setSelectedField(field)}
-                          className={`min-h-12 rounded-2xl px-4 font-semibold ${selectedField === field ? "bg-[#6d4c41] text-white" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"}`}
+                          className={`min-h-12 rounded-2xl px-3 text-sm font-semibold whitespace-nowrap ${selectedField === field ? "bg-[#6d4c41] text-white" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"}`}
                         >
                           {correctionFieldLabel[field]}
                         </button>

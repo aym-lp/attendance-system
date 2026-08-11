@@ -10,6 +10,7 @@ export type Staff = {
   role: StaffRole;
   hourlyWage: number;
   transportationAllowance: number;
+  breakMinutes?: number | null;
   memo: string;
   isActive: boolean;
 };
