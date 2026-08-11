@@ -189,7 +189,7 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
           />
         </div>
         <div className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900 sm:p-8">
-          <h2 className="text-2xl font-bold">修正履歴</h2>
+          <h2 className="text-2xl font-bold">打刻修正履歴</h2>
           <CorrectionHistoryTable histories={myHistories} />
         </div>
       </div>
@@ -205,7 +205,7 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
               <MenuButton label="スタッフ一覧" onClick={() => setCurrentView("staff")} />
               <MenuButton label="勤務履歴一覧" onClick={() => setCurrentView("history")} />
               <MenuButton label="打刻修正" onClick={() => setCurrentView("correction")} />
-              <MenuButton label="修正履歴" onClick={() => setCurrentView("correctionHistory")} />
+              <MenuButton label="打刻修正履歴" onClick={() => setCurrentView("correctionHistory")} />
               <MenuButton label="月次集計" onClick={() => setCurrentView("monthly")} />
               <MenuButton label="特別手当設定" onClick={() => setCurrentView("allowance")} />
             </>
@@ -598,14 +598,6 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
                         {!isSelfMode && (
                           <button onClick={deleteSelectedDayRecords} className="rounded-2xl bg-red-700 px-4 py-2 text-sm font-bold text-white">この日の勤務を削除</button>
                         )}
-                        <button onClick={() => {
-                          if (confirm("この勤怠履歴を削除しますか？")) {
-                            onDeleteRecord(targetRecord.id);
-                            setSelectedRecordId("");
-                            setSelectedField(null);
-                            setValues({ clockIn: "", clockOut: "", breakStart: "", breakEnd: "" });
-                          }
-                        }} className="rounded-2xl bg-red-600 px-4 py-2 text-sm font-bold text-white">削除</button>
                       </div>
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
@@ -619,12 +611,12 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
                 {targetRecord && (
                   <div className="mt-4">
                     <p className="mb-2 text-sm font-semibold">修正箇所を選択</p>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                       {(["clockIn", "clockOut", "breakStart", "breakEnd"] as CorrectionField[]).map((field) => (
                         <button
                           key={field}
                           onClick={() => setSelectedField(field)}
-                          className={`min-h-12 rounded-2xl px-3 text-sm font-semibold whitespace-nowrap ${selectedField === field ? "bg-[#6d4c41] text-white" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"}`}
+                          className={`min-h-12 rounded-2xl border px-3 text-sm font-bold shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d4c41] ${selectedField === field ? "border-[#6d4c41] bg-[#6d4c41] text-white shadow-md" : "border-slate-200 bg-white text-slate-700 hover:border-[#a1887f] hover:bg-[#efebe9] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-[#a1887f] dark:hover:bg-slate-700"}`}
                         >
                           {correctionFieldLabel[field]}
                         </button>
@@ -654,8 +646,8 @@ function CorrectionHistoryTable({ histories }: { histories: CorrectionHistory[] 
   return (
     <div className="mt-4 overflow-x-auto">
       <table className="w-full min-w-[1000px] text-left text-sm">
-        <thead className="bg-slate-50 text-slate-500 dark:bg-slate-800">
-          <tr><th className="px-4 py-3">スタッフ名</th><th className="px-4 py-3">修正対象日</th><th className="px-4 py-3">修正項目</th><th className="px-4 py-3">修正前時刻</th><th className="px-4 py-3">修正後時刻</th><th className="px-4 py-3">修正者</th><th className="px-4 py-3">修正日時</th></tr>
+        <thead className="bg-[#d7ccc8] text-[#3e2723]">
+          <tr><th className="whitespace-nowrap px-4 py-3">スタッフ名</th><th className="whitespace-nowrap px-4 py-3">修正対象日</th><th className="whitespace-nowrap px-4 py-3">修正項目</th><th className="whitespace-nowrap px-4 py-3">修正前時刻</th><th className="whitespace-nowrap px-4 py-3">修正後時刻</th><th className="whitespace-nowrap px-4 py-3">修正者</th><th className="whitespace-nowrap px-4 py-3">修正日時</th></tr>
         </thead>
         <tbody>
           {histories.map((history) => (
@@ -669,7 +661,7 @@ function CorrectionHistoryTable({ histories }: { histories: CorrectionHistory[] 
               <td className="px-4 py-3">{new Intl.DateTimeFormat("ja-JP", { dateStyle: "short", timeStyle: "short" }).format(new Date(history.correctedAt))}</td>
             </tr>
           ))}
-          {histories.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">修正履歴はまだありません。</td></tr>}
+          {histories.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">打刻修正履歴はまだありません。</td></tr>}
         </tbody>
       </table>
     </div>
