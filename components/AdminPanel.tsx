@@ -228,7 +228,7 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
               const roleOrder = { manager: 0, admin: 1, staff: 2 };
               return (roleOrder[a.role] ?? 2) - (roleOrder[b.role] ?? 2);
             }).map((staff) => (
-              <button key={staff.id} onClick={() => setSelectedStaff(staff)} className="rounded-2xl border border-slate-200 p-4 text-left hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">
+              <button key={staff.id} onClick={() => setSelectedStaff(staff)} className="rounded-2xl border border-[#d7ccc8] bg-white p-4 text-left text-[#6d4c41] shadow-sm transition-colors hover:border-[#a1887f] hover:bg-[#efebe9] active:scale-[0.99] dark:border-slate-700 dark:bg-slate-900 dark:hover:border-[#a1887f] dark:hover:bg-slate-800">
                 <p className="font-bold">{staff.name}</p>
               </button>
             ))}
@@ -309,7 +309,7 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
               const indexB = staffList.findIndex((s) => s.id === b.staffId);
               return indexA - indexB;
             }).map((summary) => (
-              <button key={summary.staffId} onClick={() => setSelectedSummary(summary)} className="rounded-2xl border border-slate-200 p-4 text-left hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">
+              <button key={summary.staffId} onClick={() => setSelectedSummary(summary)} className="rounded-2xl border border-[#d7ccc8] bg-white p-4 text-left text-[#6d4c41] shadow-sm transition-colors hover:border-[#a1887f] hover:bg-[#efebe9] active:scale-[0.99] dark:border-slate-700 dark:bg-slate-900 dark:hover:border-[#a1887f] dark:hover:bg-slate-800">
                 <p className="font-bold">{summary.staffName}</p>
                 <p className="mt-1 text-sm text-slate-500">合計支給額：{formatCurrency(summary.totalPay)}</p>
               </button>
@@ -810,7 +810,7 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (value:
           value={inputValue}
           onChange={(e) => handleInputChange(e.target.value)}
           placeholder="YYYY/MM/DD"
-          className="min-h-12 w-full rounded-r-2xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-[#6d4c41] dark:border-slate-700 dark:bg-slate-950"
+          className="min-h-12 w-full rounded-r-2xl border border-[#a1887f] bg-[#fffdfb] px-4 text-sm font-semibold text-[#6d4c41] shadow-sm outline-none transition-colors hover:border-[#6d4c41] hover:bg-[#efebe9] focus:border-[#6d4c41] focus:ring-2 focus:ring-[#d7ccc8] dark:border-slate-700 dark:bg-slate-950"
         />
       </div>
       {open && (
@@ -833,7 +833,7 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (value:
                   className={`h-8 w-8 rounded-full text-sm ${
                     day === selectedDay && month === selectedMonth && year === selectedYear
                       ? "bg-[#6d4c41] font-bold text-white"
-                      : "text-[#3e2723] hover:bg-[#faf8f5]"
+                      : "text-[#6d4c41] hover:bg-[#efebe9]"
                   }`}
                 >
                   {day}
@@ -849,8 +849,8 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (value:
 
 function MenuButton({ icon, label, onClick }: { icon?: string; label: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="min-h-16 rounded-2xl border border-[#d7ccc8] bg-white px-5 py-3 text-left shadow-sm hover:bg-[#faf8f5] active:scale-[0.98]">
-      <p className="text-base font-bold text-[#3e2723]">{label}</p>
+    <button onClick={onClick} className="min-h-16 rounded-2xl border border-[#d7ccc8] bg-white px-5 py-3 text-left text-[#6d4c41] shadow-sm transition-colors hover:border-[#a1887f] hover:bg-[#efebe9] active:scale-[0.98]">
+      <p className="text-base font-bold">{label}</p>
     </button>
   );
 }

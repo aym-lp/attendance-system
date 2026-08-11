@@ -25,3 +25,28 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 選択欄を、押せる操作であることが分かるブラウン基調のボタン風デザインに統一する */
+select,
+input[type="month"] {
+  cursor: pointer;
+  border-color: #a1887f;
+  background-color: #fffdfb;
+  color: var(--brown-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgb(62 39 35 / 12%);
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+select:hover,
+input[type="month"]:hover {
+  border-color: var(--brown-primary);
+  background-color: #efebe9;
+}
+
+select:focus,
+input[type="month"]:focus {
+  border-color: var(--brown-primary);
+  box-shadow: 0 0 0 3px rgb(109 76 65 / 20%);
+  outline: none;
+}
