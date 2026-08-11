@@ -594,11 +594,6 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
                   <div className="mt-4 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <p className="font-bold">{targetRecord.staffName} - {targetRecord.workDate}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {!isSelfMode && (
-                          <button onClick={deleteSelectedDayRecords} className="rounded-2xl bg-red-700 px-4 py-2 text-sm font-bold text-white">この日の勤務を削除</button>
-                        )}
-                      </div>
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                       <p>出勤：{formatDateTime(targetRecord.clockIn)}</p>
@@ -632,6 +627,9 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
                 )}
                 {selectedField && (
                   <button onClick={submit} className="mt-4 min-h-14 w-full rounded-2xl bg-[#8d6e63] px-6 font-bold text-white">打刻を修正</button>
+                )}
+                {!isSelfMode && targetRecord && (
+                  <button onClick={deleteSelectedDayRecords} className="mt-4 min-h-12 w-full rounded-2xl bg-red-700 px-4 py-2 text-sm font-bold text-white">この日の勤務を削除</button>
                 )}
               </div>
             )}
