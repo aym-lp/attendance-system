@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Allowance, AttendanceRecord, CorrectionField, CorrectionHistory, CorrectionTimeField, Staff } from "@/lib/types";
+import type { Allowance, AttendanceRecord, CorrectionHistory, CorrectionTimeField, Staff } from "@/lib/types";
 import { buildMonthlySummary, createEmptyRecord, getBreakIntervalMinutes, getTodayKey, recordsToCsv } from "@/lib/time";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { generateSeedData } from "@/lib/seedData";

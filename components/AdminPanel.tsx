@@ -755,19 +755,23 @@ function CorrectionHistoryTable({ histories }: { histories: CorrectionHistory[] 
 }
 
 function DeletedAttendanceValues({ value }: { value: string | null }) {
+  let details: Record<string, string | null> | null = null;
   try {
-    const details = JSON.parse(value ?? "{}") as Record<string, string | null>;
-    return (
-      <div className="space-y-1 whitespace-nowrap text-xs">
-        <p>出勤：{formatDateTime(details.clockIn ?? null)}</p>
-        <p>退勤：{formatDateTime(details.clockOut ?? null)}</p>
-        <p>休憩開始：{formatDateTime(details.breakStart ?? null)}</p>
-        <p>休憩終了：{formatDateTime(details.breakEnd ?? null)}</p>
-      </div>
-    );
+    details = JSON.parse(value ?? "{}") as Record<string, string | null>;
   } catch {
-    return <span>{value ?? "—"}</span>;
+    // 既存の非JSON形式の履歴も表示できるよう、そのままフォールバックする。
   }
+
+  if (!details) return <span>{value ?? "—"}</span>;
+
+  return (
+    <div className="space-y-1 whitespace-nowrap text-xs">
+      <p>出勤：{formatDateTime(details.clockIn ?? null)}</p>
+      <p>退勤：{formatDateTime(details.clockOut ?? null)}</p>
+      <p>休憩開始：{formatDateTime(details.breakStart ?? null)}</p>
+      <p>休憩終了：{formatDateTime(details.breakEnd ?? null)}</p>
+    </div>
+  );
 }
 
 function Input({ label, value, onChange, inputMode }: { label: string; value: string; onChange: (value: string) => void; inputMode?: "numeric" }) {
