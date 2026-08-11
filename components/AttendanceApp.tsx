@@ -11,6 +11,7 @@ import { LoginPanel } from "@/components/LoginPanel";
 import { loadPersistedData, savePersistedData } from "@/lib/localStorage";
 import {
   deleteAllowance as deleteAllowanceCloud,
+  deleteAttendanceRecord as deleteAttendanceRecordCloud,
   deleteStaff as deleteStaffCloud,
   fetchAllowances,
   fetchAttendanceRecords,
@@ -531,6 +532,21 @@ export function AttendanceApp() {
               }}
               onUpdateRecord={updateAttendanceRecord}
               onCreateRecord={createAttendanceRecord}
+              onDeleteRecord={(id) => {
+                setRecords((prev) => prev.filter((item) => item.id !== id));
+                setMessage("勤怠履歴を削除しました");
+
+                if (cloudEnabled) {
+                  void (async () => {
+                    try {
+                      await deleteAttendanceRecordCloud(id);
+                      setCloudError(null);
+                    } catch (error) {
+                      handleCloudError(error, "勤怠履歴の削除に失敗しました");
+                    }
+                  })();
+                }
+              }}
               onAddAllowance={(allowance) => {
                 const newAllowance = { ...allowance, id: crypto.randomUUID() };
                 setAllowances((prev) => [...prev, newAllowance]);

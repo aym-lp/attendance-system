@@ -315,6 +315,14 @@ export async function deleteStaff(id: string): Promise<void> {
   }
 }
 
+export async function deleteAttendanceRecord(id: string): Promise<void> {
+  const client = requireSupabase();
+  const { error } = await client.from("attendance_records").delete().eq("id", id);
+  if (error) {
+    throw new Error(`勤怠記録の削除に失敗しました: ${error.message}`);
+  }
+}
+
 export async function insertCorrectionHistories(histories: CorrectionHistory[]): Promise<CorrectionHistory[]> {
   if (histories.length === 0) return [];
   const client = requireSupabase();

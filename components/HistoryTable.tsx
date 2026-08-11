@@ -89,6 +89,8 @@ export function HistoryTable({ records, staffList = [], isAdmin = true, allowanc
               <th className="px-4 py-3">スタッフ</th>
               <th className="px-4 py-3">出勤</th>
               <th className="px-4 py-3">退勤</th>
+              <th className="px-4 py-3">休憩開始</th>
+              <th className="px-4 py-3">休憩終了</th>
               <th className="px-4 py-3">休憩時間</th>
               {isAdmin && (
                 <>
@@ -111,6 +113,8 @@ export function HistoryTable({ records, staffList = [], isAdmin = true, allowanc
                   <td className="px-4 py-3 font-semibold">{record.staffName}</td>
                   <td className="px-4 py-3">{formatDateTime(record.clockIn)}</td>
                   <td className="px-4 py-3">{formatDateTime(record.clockOut)}</td>
+                  <td className="px-4 py-3">{formatDateTime(record.breakStart)}</td>
+                  <td className="px-4 py-3">{formatDateTime(record.breakEnd)}</td>
                   <td className="px-4 py-3">
                     {pay.breakError ? (
                       <span className="font-bold text-red-600">{pay.breakRounded}分（エラー）</span>
@@ -143,7 +147,7 @@ export function HistoryTable({ records, staffList = [], isAdmin = true, allowanc
             })}
             {sortedAndFilteredRecords.length === 0 && (
               <tr>
-                <td colSpan={isAdmin ? 11 : 5} className="px-4 py-8 text-center text-[#8d6e63]">該当する勤務履歴はありません。</td>
+                <td colSpan={isAdmin ? 13 : 7} className="px-4 py-8 text-center text-[#8d6e63]">該当する勤務履歴はありません。</td>
               </tr>
             )}
           </tbody>
