@@ -299,7 +299,10 @@ export function AttendanceApp() {
     }
 
     const now = new Date().toISOString();
-    const totalBreakMinutes = getBreakIntervalMinutes({ breakStart: record.breakStart, breakEnd: now });
+    // `total_break_minutes` is an integer column. ISO timestamps include
+    // seconds, so the raw interval is fractional even for an ordinary
+    // one-minute break.
+    const totalBreakMinutes = Math.round(getBreakIntervalMinutes({ breakStart: record.breakStart, breakEnd: now }));
     const updated: AttendanceRecord = {
       ...record,
       breakEnd: now,
