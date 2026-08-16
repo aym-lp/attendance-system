@@ -263,10 +263,10 @@ export async function completeAttendanceBreak(record: AttendanceRecord, breakEnd
       total_break_minutes: totalBreakMinutes,
       status: "working",
     })
+    // The record ID identifies the exact staff member and work date. Keep
+    // the database-side guard focused on the value that must never be
+    // overwritten by normal time-clock input.
     .eq("id", record.id)
-    .eq("staff_id", record.staffId)
-    .eq("work_date", record.workDate)
-    .eq("status", "break")
     .is("break_end", null)
     .select(RECORD_COLUMNS)
     .maybeSingle();
