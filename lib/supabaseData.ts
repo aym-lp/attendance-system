@@ -248,6 +248,38 @@ export async function upsertAttendanceRecord(record: AttendanceRecord): Promise<
   return mapAttendanceRecordRow(data);
 }
 
+/**
+ * Records a staff member's break end without replacing the rest of the
+ * attendance row. The guards make this a one-time transition: an already
+ * recorded break end (including one entered by an administrator) is never
+ * overwritten by the normal time-clock flow.
+ */
+export async function completeAttendanceBreak(record: AttendanceRecord, breakEnd: string, totalBreakMinutes: number): Promise<AttendanceRecord> {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("attendance_records")
+    .update({
+      break_end: breakEnd,
+      total_break_minutes: totalBreakMinutes,
+      status: "working",
+    })
+    .eq("id", record.id)
+    .eq("staff_id", record.staffId)
+    .eq("work_date", record.workDate)
+    .eq("status", "break")
+    .is("break_end", null)
+    .select(RECORD_COLUMNS)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`休憩終了時刻の保存に失敗しました: ${error.message}`);
+  }
+  if (!data) {
+    throw new Error("休憩終了時刻はすでに保存済みか、対象の勤務記録が見つかりません");
+  }
+  return mapAttendanceRecordRow(data);
+}
+
 export async function upsertStaff(staff: Staff): Promise<Staff> {
   console.log("[upsertStaff] before insert - staff:", staff);
   const client = requireSupabase();

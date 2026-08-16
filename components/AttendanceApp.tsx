@@ -13,6 +13,7 @@ import {
   deleteAllowance as deleteAllowanceCloud,
   deleteAttendanceRecord as deleteAttendanceRecordCloud,
   deleteStaff as deleteStaffCloud,
+  completeAttendanceBreak,
   fetchAllowances,
   fetchAttendanceRecords,
   fetchAttendanceSnapshot,
@@ -288,19 +289,39 @@ export function AttendanceApp() {
   }, [updateTodayRecord]);
 
   const endBreak = useCallback(async () => {
-    const now = new Date().toISOString();
-    const updated = await updateTodayRecord((record) => {
-      return {
-        ...record,
-        breakEnd: now,
-        totalBreakMinutes: getBreakIntervalMinutes({ breakStart: record.breakStart, breakEnd: now }),
-        status: "working",
-      };
-    });
-    if (updated) {
-      setMessage("休憩を終了しました");
+    if (!currentStaff) return;
+
+    const today = getTodayKey();
+    const record = recordsRef.current.find((item) => item.staffId === currentStaff.id && item.workDate === today);
+    if (!record || record.status !== "break" || record.breakEnd !== null) {
+      setMessage("休憩終了を保存できる勤務記録がありません");
+      return;
     }
-  }, [updateTodayRecord]);
+
+    const now = new Date().toISOString();
+    const totalBreakMinutes = getBreakIntervalMinutes({ breakStart: record.breakStart, breakEnd: now });
+    const updated: AttendanceRecord = {
+      ...record,
+      breakEnd: now,
+      totalBreakMinutes,
+      status: "working",
+    };
+
+    try {
+      // This deliberately updates only the break-completion fields. It does
+      // not upsert the full record, so administrator-entered historical data
+      // and unrelated attendance fields cannot be replaced by this action.
+      const saved = cloudEnabled ? await completeAttendanceBreak(record, now, totalBreakMinutes) : updated;
+      const nextRecords = recordsRef.current.map((item) => (item.id === saved.id ? saved : item));
+      recordsRef.current = nextRecords;
+      setRecords(nextRecords);
+      setCloudError(null);
+      setMessage("休憩を終了しました");
+    } catch (error) {
+      handleCloudError(error, "休憩終了時刻の保存に失敗しました");
+      await refreshRecords();
+    }
+  }, [cloudEnabled, currentStaff, handleCloudError, refreshRecords]);
 
   const clockOut = useCallback(async () => {
     const now = new Date().toISOString();
