@@ -609,19 +609,11 @@ function AttendanceCorrectionPanel({ staffList, records, currentStaffId, onUpdat
     }
     if (!targetRecord) return;
 
-    // 修正対象フィールドのみを更新（部分的なPATCH）
+    // 修正対象として選んだ項目だけを送る。フォームには既存の全時刻を
+    // 表示しているため、他の項目まで送ると不要な修正履歴が作成される。
     const updateData: Partial<Pick<AttendanceRecord, CorrectionTimeField>> = {};
-    if (selectedField === "clockIn" || values.clockIn) {
-      updateData.clockIn = toDateTimeValue(targetRecord.workDate, values.clockIn);
-    }
-    if (selectedField === "clockOut" || values.clockOut) {
-      updateData.clockOut = toDateTimeValue(targetRecord.workDate, values.clockOut);
-    }
-    if (selectedField === "breakStart" || values.breakStart) {
-      updateData.breakStart = toDateTimeValue(targetRecord.workDate, values.breakStart);
-    }
-    if (selectedField === "breakEnd" || values.breakEnd) {
-      updateData.breakEnd = toDateTimeValue(targetRecord.workDate, values.breakEnd);
+    if (selectedField) {
+      updateData[selectedField] = toDateTimeValue(targetRecord.workDate, values[selectedField]);
     }
 
     onUpdateRecord(targetRecord.id, updateData);
