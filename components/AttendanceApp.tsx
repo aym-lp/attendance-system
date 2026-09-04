@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Allowance, AttendanceRecord, CorrectionHistory, CorrectionTimeField, Staff } from "@/lib/types";
-import { buildMonthlySummary, createEmptyRecord, getBreakIntervalMinutes, getTodayKey, recordsToCsv } from "@/lib/time";
+import { buildMonthlySummary, createEmptyRecord, getBreakIntervalMinutes, getTodayKey, recordsToCsv, roundUpBreakMinutes } from "@/lib/time";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { generateSeedData } from "@/lib/seedData";
 import { AdminPanel } from "@/components/AdminPanel";
@@ -299,10 +299,7 @@ export function AttendanceApp() {
     }
 
     const now = new Date().toISOString();
-    // `total_break_minutes` is an integer column. ISO timestamps include
-    // seconds, so the raw interval is fractional even for an ordinary
-    // one-minute break.
-    const totalBreakMinutes = Math.round(getBreakIntervalMinutes({ breakStart: record.breakStart, breakEnd: now }));
+    const totalBreakMinutes = roundUpBreakMinutes(getBreakIntervalMinutes({ breakStart: record.breakStart, breakEnd: now }));
     const updated: AttendanceRecord = {
       ...record,
       breakEnd: now,
@@ -444,10 +441,10 @@ export function AttendanceApp() {
           }
         }
 
-        const totalBreakMinutes = getBreakIntervalMinutes({
+        const totalBreakMinutes = roundUpBreakMinutes(getBreakIntervalMinutes({
           breakStart: values.breakStart !== undefined ? values.breakStart : record.breakStart,
           breakEnd: values.breakEnd !== undefined ? values.breakEnd : record.breakEnd,
-        });
+        }));
 
         return {
           ...record,
@@ -481,7 +478,7 @@ export function AttendanceApp() {
 
   const createAttendanceRecord = useCallback(
     (record: Omit<AttendanceRecord, "workMinutes" | "overtimeMinutes" | "nightMinutes">) => {
-      const totalBreakMinutes = getBreakIntervalMinutes(record);
+      const totalBreakMinutes = roundUpBreakMinutes(getBreakIntervalMinutes(record));
       const newRecord: AttendanceRecord = {
         ...record,
         totalBreakMinutes,

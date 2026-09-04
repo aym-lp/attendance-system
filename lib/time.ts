@@ -112,6 +112,18 @@ export function formatBreakMinutes(minutes: number) {
   return `${normalized}分`;
 }
 
+/**
+ * Breaks are counted only in the three payroll units agreed for this system.
+ * Any non-zero break up to 30 minutes counts as 30 minutes; a longer break
+ * counts as 45 minutes.
+ */
+export function roundUpBreakMinutes(minutes: number) {
+  const normalized = Math.max(0, Number(minutes) || 0);
+  if (normalized === 0) return 0;
+  if (normalized <= 30) return 30;
+  return 45;
+}
+
 export function getBreakIntervalMinutes(record: Pick<AttendanceRecord, "breakStart" | "breakEnd">) {
   const start = parseTime(record.breakStart);
   const end = parseTime(record.breakEnd);
@@ -120,7 +132,7 @@ export function getBreakIntervalMinutes(record: Pick<AttendanceRecord, "breakSta
 }
 
 export function getEffectiveBreakMinutes(record: AttendanceRecord): number {
-  return getBreakIntervalMinutes(record);
+  return roundUpBreakMinutes(getBreakIntervalMinutes(record));
 }
 
 export function formatWorkDateParts(value: string): { year: string; monthDay: string } {
