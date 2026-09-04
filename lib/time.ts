@@ -2,16 +2,6 @@ import type { Allowance, AttendanceRecord, AttendanceSummary, Staff } from "@/li
 
 const STANDARD_WORK_MINUTES = 8 * 60;
 
-function roundUpTo15Minutes(date: Date): Date {
-  const result = new Date(date);
-  const minutes = result.getMinutes();
-  const remainder = minutes % 15;
-  if (remainder === 0) return result;
-  result.setMinutes(minutes + (15 - remainder));
-  result.setSeconds(0, 0);
-  return result;
-}
-
 function roundDownTo15Minutes(date: Date): Date {
   const result = new Date(date);
   const minutes = result.getMinutes();
@@ -153,14 +143,16 @@ export function getWorkedMinutes(record: AttendanceRecord, now = new Date()) {
 
   const rawStart = parseTime(record.clockIn);
   if (!rawStart) return 0;
-  const start = roundUpTo15Minutes(rawStart).getTime();
+  // Both clock-in and clock-out are counted at the preceding 15-minute
+  // boundary. For example, 08:22–14:53 becomes 08:15–14:45.
+  const start = roundDownTo15Minutes(rawStart).getTime();
 
   let end: number;
   if (record.clockOut) {
     const rawEnd = parseTime(record.clockOut);
-    end = rawEnd ? roundDownTo15Minutes(rawEnd).getTime() : now.getTime();
+    end = rawEnd ? roundDownTo15Minutes(rawEnd).getTime() : roundDownTo15Minutes(now).getTime();
   } else {
-    end = now.getTime();
+    end = roundDownTo15Minutes(now).getTime();
   }
 
   const gross = Math.max(0, (end - start) / 60000);
