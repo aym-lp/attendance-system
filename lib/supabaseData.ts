@@ -1,4 +1,4 @@
-import type { Allowance, AttendanceRecord, AttendanceStatus, CorrectionField, CorrectionHistory, Staff } from "@/lib/types";
+import type { Allowance, AttendanceRecord, AttendanceStatus, CorrectionField, CorrectionHistory, Staff, TransportationType } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
@@ -10,6 +10,8 @@ type StaffRow = {
   role: Staff["role"];
   hourly_wage: number;
   transportation_allowance: number;
+  transportation_type: TransportationType | null;
+  monthly_transportation_allowance: number | null;
   memo: string | null;
   is_active: boolean;
   created_at: string | null;
@@ -61,7 +63,7 @@ type CorrectionHistoryRow = {
   created_at: string | null;
 };
 
-const STAFF_COLUMNS = "id,name,kana,pin,role,hourly_wage,transportation_allowance,memo,is_active,created_at,updated_at";
+const STAFF_COLUMNS = "id,name,kana,pin,role,hourly_wage,transportation_allowance,transportation_type,monthly_transportation_allowance,memo,is_active,created_at,updated_at";
 const RECORD_COLUMNS = "id,staff_id,staff_name,work_date,clock_in,clock_out,break_start,break_end,total_break_minutes,status,work_minutes,overtime_minutes,night_minutes,created_at,updated_at";
 const ALLOWANCE_COLUMNS = "id,name,start_date,end_date,staff_id,staff_name,hourly_addition,created_at,updated_at";
 const CORRECTION_COLUMNS = "id,record_id,staff_id,staff_name,work_date,field,before_value,after_value,corrected_by,corrected_at,reason,created_at";
@@ -82,6 +84,8 @@ function mapStaffRow(row: StaffRow): Staff {
     role: row.role,
     hourlyWage: row.hourly_wage ?? 0,
     transportationAllowance: row.transportation_allowance ?? 0,
+    transportationType: row.transportation_type ?? "daily",
+    monthlyTransportationAllowance: row.monthly_transportation_allowance ?? 0,
     memo: row.memo ?? "",
     isActive: row.is_active,
   };
@@ -96,6 +100,8 @@ function toStaffRow(staff: Staff): Partial<StaffRow> {
     role: staff.role,
     hourly_wage: staff.hourlyWage,
     transportation_allowance: staff.transportationAllowance,
+    transportation_type: staff.transportationType,
+    monthly_transportation_allowance: staff.monthlyTransportationAllowance,
     memo: staff.memo,
     is_active: staff.isActive,
   };
@@ -303,6 +309,8 @@ export async function updateStaffFields(id: string, patch: Partial<Omit<Staff, "
   if (patch.role !== undefined) payload.role = patch.role;
   if (patch.hourlyWage !== undefined) payload.hourly_wage = patch.hourlyWage;
   if (patch.transportationAllowance !== undefined) payload.transportation_allowance = patch.transportationAllowance;
+  if (patch.transportationType !== undefined) payload.transportation_type = patch.transportationType;
+  if (patch.monthlyTransportationAllowance !== undefined) payload.monthly_transportation_allowance = patch.monthlyTransportationAllowance;
   if (patch.memo !== undefined) payload.memo = patch.memo;
   if (patch.isActive !== undefined) payload.is_active = patch.isActive;
 

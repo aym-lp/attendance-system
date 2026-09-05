@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Allowance, AttendanceRecord, AttendanceSummary, CorrectionField, CorrectionHistory, CorrectionTimeField, Staff, StaffRole } from "@/lib/types";
+import type { Allowance, AttendanceRecord, AttendanceSummary, CorrectionField, CorrectionHistory, CorrectionTimeField, Staff, StaffRole, TransportationType } from "@/lib/types";
 import { formatCurrency, formatDateTime, formatMinutes, formatWorkDateForDialog, fromDateTimeInputValue, toDateTimeInputValue } from "@/lib/time";
 import { HistoryTable } from "@/components/HistoryTable";
 import { AllowancePanel } from "@/components/AllowancePanel";
@@ -56,6 +56,8 @@ function StaffDetailPanel({ staff, onUpdateStaff, onDeleteStaff }: { staff: Staf
   const [role, setRole] = useState<StaffRole>(staff.role);
   const [hourlyWage, setHourlyWage] = useState(staff.hourlyWage.toString());
   const [transportationAllowance, setTransportationAllowance] = useState(staff.transportationAllowance.toString());
+  const [transportationType, setTransportationType] = useState<TransportationType>(staff.transportationType);
+  const [monthlyTransportationAllowance, setMonthlyTransportationAllowance] = useState(staff.monthlyTransportationAllowance.toString());
   const [memo, setMemo] = useState(staff.memo);
   const [error, setError] = useState("");
 
@@ -67,6 +69,8 @@ function StaffDetailPanel({ staff, onUpdateStaff, onDeleteStaff }: { staff: Staf
     setRole(staff.role);
     setHourlyWage(staff.hourlyWage.toString());
     setTransportationAllowance(staff.transportationAllowance.toString());
+    setTransportationType(staff.transportationType);
+    setMonthlyTransportationAllowance(staff.monthlyTransportationAllowance.toString());
     setMemo(staff.memo);
   }, [staff]);
 
@@ -86,7 +90,9 @@ function StaffDetailPanel({ staff, onUpdateStaff, onDeleteStaff }: { staff: Staf
       pin,
       role,
       hourlyWage: Number(hourlyWage) || 0,
-      transportationAllowance: Number(transportationAllowance) || 0,
+      transportationType,
+      transportationAllowance: transportationType === "daily" ? Number(transportationAllowance) || 0 : 0,
+      monthlyTransportationAllowance: transportationType === "monthly" ? Number(monthlyTransportationAllowance) || 0 : 0,
       memo: memo.trim(),
     });
     setIsEditing(false);
@@ -100,6 +106,8 @@ function StaffDetailPanel({ staff, onUpdateStaff, onDeleteStaff }: { staff: Staf
     setRole(staff.role);
     setHourlyWage(staff.hourlyWage.toString());
     setTransportationAllowance(staff.transportationAllowance.toString());
+    setTransportationType(staff.transportationType);
+    setMonthlyTransportationAllowance(staff.monthlyTransportationAllowance.toString());
     setMemo(staff.memo);
     setIsEditing(false);
     setError("");
@@ -114,7 +122,9 @@ function StaffDetailPanel({ staff, onUpdateStaff, onDeleteStaff }: { staff: Staf
           <Input label="PINコード（4桁）" value={pin} onChange={(value) => setPin(value.replace(/\D/g, "").slice(0, 4))} inputMode="numeric" />
           <label className="text-sm font-semibold">役職<select value={role} onChange={(event) => setRole(event.target.value as StaffRole)} className="mt-1 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-950"><option value="admin">管理者</option><option value="manager">店長</option><option value="staff">スタッフ</option></select></label>
           <Input label="時給" value={hourlyWage} onChange={setHourlyWage} inputMode="numeric" />
-          <Input label="交通費" value={transportationAllowance} onChange={setTransportationAllowance} inputMode="numeric" />
+          <label className="text-sm font-semibold">交通費の種類<select value={transportationType} onChange={(event) => setTransportationType(event.target.value as TransportationType)} className="mt-1 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-950"><option value="none">なし</option><option value="daily">日額</option><option value="monthly">月額定期</option></select></label>
+          {transportationType === "daily" && <Input label="交通費（日額）" value={transportationAllowance} onChange={setTransportationAllowance} inputMode="numeric" />}
+          {transportationType === "monthly" && <Input label="月額定期代" value={monthlyTransportationAllowance} onChange={setMonthlyTransportationAllowance} inputMode="numeric" />}
           <label className="text-sm font-semibold">メモ欄<textarea value={memo} onChange={(event) => setMemo(event.target.value)} className="mt-1 min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-950" /></label>
           {error && <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
           <div className="flex gap-2">
@@ -138,7 +148,7 @@ function StaffDetailPanel({ staff, onUpdateStaff, onDeleteStaff }: { staff: Staf
           </div>
           <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
             <p className="text-sm text-slate-500">交通費</p>
-            <p className="font-bold">{formatCurrency(staff.transportationAllowance)}</p>
+            <p className="font-bold">{staff.transportationType === "monthly" ? `月額定期 ${formatCurrency(staff.monthlyTransportationAllowance)}` : staff.transportationType === "daily" ? `日額 ${formatCurrency(staff.transportationAllowance)}` : "なし"}</p>
           </div>
           <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
             <p className="text-sm text-slate-500">PINコード</p>
@@ -471,12 +481,14 @@ function StaffRegistrationPanel({ onAddStaff, onClose }: { onAddStaff: AdminPane
   const [role, setRole] = useState<StaffRole>("staff");
   const [hourlyWage, setHourlyWage] = useState("1200");
   const [transportationAllowance, setTransportationAllowance] = useState("0");
+  const [transportationType, setTransportationType] = useState<TransportationType>("daily");
+  const [monthlyTransportationAllowance, setMonthlyTransportationAllowance] = useState("0");
   const [memo, setMemo] = useState("");
   const [error, setError] = useState("");
 
   const submit = () => {
     console.log("[StaffRegistrationPanel] submit が呼ばれました");
-    console.log("[StaffRegistrationPanel] 入力値:", { name, kana, pin, role, hourlyWage, transportationAllowance, memo });
+    console.log("[StaffRegistrationPanel] 入力値:", { name, kana, pin, role, hourlyWage, transportationType, transportationAllowance, monthlyTransportationAllowance, memo });
 
     if (!name.trim() || !kana.trim()) {
       setError("氏名とフリガナを入力してください");
@@ -493,7 +505,9 @@ function StaffRegistrationPanel({ onAddStaff, onClose }: { onAddStaff: AdminPane
       pin,
       role,
       hourlyWage: Number(hourlyWage) || 0,
-      transportationAllowance: Number(transportationAllowance) || 0,
+      transportationType,
+      transportationAllowance: transportationType === "daily" ? Number(transportationAllowance) || 0 : 0,
+      monthlyTransportationAllowance: transportationType === "monthly" ? Number(monthlyTransportationAllowance) || 0 : 0,
       memo: memo.trim(),
     };
 
@@ -506,6 +520,8 @@ function StaffRegistrationPanel({ onAddStaff, onClose }: { onAddStaff: AdminPane
     setRole("staff");
     setHourlyWage("1200");
     setTransportationAllowance("0");
+    setTransportationType("daily");
+    setMonthlyTransportationAllowance("0");
     setMemo("");
     setError("");
     onClose();
@@ -520,7 +536,9 @@ function StaffRegistrationPanel({ onAddStaff, onClose }: { onAddStaff: AdminPane
         <Input label="PINコード（4桁）" value={pin} onChange={(value) => setPin(value.replace(/\D/g, "").slice(0, 4))} inputMode="numeric" />
         <label className="text-sm font-semibold">権限<select value={role} onChange={(event) => setRole(event.target.value as StaffRole)} className="mt-1 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-950"><option value="admin">管理者</option><option value="manager">店長</option><option value="staff">スタッフ</option></select></label>
         <Input label="時給" value={hourlyWage} onChange={setHourlyWage} inputMode="numeric" />
-        <Input label="交通費設定" value={transportationAllowance} onChange={setTransportationAllowance} inputMode="numeric" />
+        <label className="text-sm font-semibold">交通費の種類<select value={transportationType} onChange={(event) => setTransportationType(event.target.value as TransportationType)} className="mt-1 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-950"><option value="none">なし</option><option value="daily">日額</option><option value="monthly">月額定期</option></select></label>
+        {transportationType === "daily" && <Input label="交通費（日額）" value={transportationAllowance} onChange={setTransportationAllowance} inputMode="numeric" />}
+        {transportationType === "monthly" && <Input label="月額定期代" value={monthlyTransportationAllowance} onChange={setMonthlyTransportationAllowance} inputMode="numeric" />}
         <label className="text-sm font-semibold md:col-span-2">メモ欄<textarea value={memo} onChange={(event) => setMemo(event.target.value)} className="mt-1 min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-950" /></label>
       </div>
       {error && <p className="mt-3 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}

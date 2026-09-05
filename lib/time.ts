@@ -235,7 +235,7 @@ export function buildMonthlySummary(records: AttendanceRecord[], month: string, 
     };
 
     const staff = staffList.find((item) => item.id === record.staffId);
-    const transportationAllowance = staff?.transportationAllowance ?? 0;
+    const transportationAllowance = staff?.transportationType === "daily" ? staff.transportationAllowance : 0;
     const payroll = calculateRecordPayroll(record, staff, allowances);
 
     current.workDays += record.clockIn ? 1 : 0;
@@ -254,7 +254,16 @@ export function buildMonthlySummary(records: AttendanceRecord[], month: string, 
     summaries.set(record.staffId, current);
   });
 
-  return Array.from(summaries.values());
+  const result = Array.from(summaries.values());
+  for (const summary of result) {
+    const staff = staffList.find((item) => item.id === summary.staffId);
+    if (staff?.transportationType === "monthly") {
+      const monthlyAllowance = staff.monthlyTransportationAllowance;
+      summary.transportationAllowance += monthlyAllowance;
+      summary.totalPay += monthlyAllowance;
+    }
+  }
+  return result;
 }
 
 export function recordsToCsv(records: AttendanceRecord[], staffList: Staff[], allowances: Allowance[]) {

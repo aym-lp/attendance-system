@@ -1,4 +1,5 @@
 export type StaffRole = "staff" | "manager" | "admin";
+export type TransportationType = "none" | "daily" | "monthly";
 
 export type AttendanceStatus = "off" | "working" | "break" | "finished";
 
@@ -9,7 +10,11 @@ export type Staff = {
   pin: string;
   role: StaffRole;
   hourlyWage: number;
+  /** Per-workday amount. Used only when transportationType is "daily". */
   transportationAllowance: number;
+  transportationType: TransportationType;
+  /** Monthly commuter-pass amount. Used only when transportationType is "monthly". */
+  monthlyTransportationAllowance: number;
   breakMinutes?: number | null;
   memo: string;
   isActive: boolean;

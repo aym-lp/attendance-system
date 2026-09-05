@@ -17,6 +17,8 @@ export function generateSeedStaff(): Staff[] {
     role: staff.role,
     hourlyWage: staff.hourlyWage,
     transportationAllowance: staff.transportationAllowance,
+    transportationType: "daily",
+    monthlyTransportationAllowance: 0,
     memo: index === 0 ? "管理者" : "",
     isActive: true,
   }));

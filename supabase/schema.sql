@@ -12,6 +12,8 @@ create table if not exists public.staff (
   role text not null default 'staff',
   hourly_wage numeric not null default 0,
   transportation_allowance numeric not null default 0,
+  transportation_type text not null default 'daily' check (transportation_type in ('none', 'daily', 'monthly')),
+  monthly_transportation_allowance numeric not null default 0,
   memo text,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
