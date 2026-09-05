@@ -420,7 +420,17 @@ export function AdminPanel({ isAdmin, currentStaff, staffList, records, correcti
               <h2 className="text-2xl font-bold">スタッフ詳細</h2>
               <button onClick={() => setSelectedStaff(null)} className="rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">✕</button>
             </div>
-            <StaffDetailPanel staff={selectedStaff} onUpdateStaff={onUpdateStaff} onDeleteStaff={onDeleteStaff} />
+            <StaffDetailPanel
+              staff={selectedStaff}
+              onUpdateStaff={(id, patch) => {
+                onUpdateStaff(id, patch);
+                // The detail modal keeps its selected staff separately from
+                // the list, so update it immediately after a successful save
+                // request instead of leaving the previous amount on screen.
+                setSelectedStaff((current) => (current?.id === id ? { ...current, ...patch } : current));
+              }}
+              onDeleteStaff={onDeleteStaff}
+            />
           </div>
         </div>
       )}
